@@ -75,10 +75,6 @@
         cb();
       });
     }, 'text');
-
-    $events.on('click', '.js-clear-db', function () {
-      window.Pouch.destroy('wardmenu-ludrs');
-    });
   };
 
   ldsDirP.getHousehold = function (fn, profileOrId) {
@@ -318,6 +314,10 @@
     me.getStakeInfo(function () {
       me.getWard(fn, me.homeWardId);
     });
+  };
+  ldsDirP.clear = function () {
+    console.info('clearing PouchDB cache');
+    window.Pouch.destroy('wardmenu-ludrs');
   };
 
   LdsDir.signin = ldsDirP.signin = function (cb) {

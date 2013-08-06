@@ -34,12 +34,39 @@ The easiest way to play with ldsorgjs is to
   6. Click on the bookmarklet
   7. Open up a console and play
   
-        var ldsorg = require('ldsorg');
-        Object.keys(ldsorg);
+        var ldsOrg = require('ldsorg').create
+          , events = {}
+          ;
+
+        function initCompleteCb() {
+          ldsOrg.getCurrentWardProfiles(function (profiles) {
+            // these profiles are from the memberList
+            // call ldsOrg.getHousehold(cb, profile) for the real profile
+          });
+        }
+
+        events.profile = function () {
+          console.log('Downloaded a complete profile');
+        };
+
+        ldsOrg.init(initCompleteCb, events);
 
 API
 ===
 
+```javascript
+var LdsOrg = require('ldsorg');
+```
+
+Class Methods
+
+  * create
+
+Instance Methods
+
+  * init(initCompleteCallback, events) - initializes internal vars and grabs PouchDB via script tag
+    * initCompleteCallback - fires when the library is ready to use
+    * events - useful for tracking download progress, see experimental below
   * getStakeInfo(cb) - returns a combination of `/unit/current-user-ward-stake/` and `/unit/current-user-units/`
   * getWard(unitNo, cb) - returns a combination of `/mem/member-list/:ward_unit_no` and `/mem/wardDirectory/photos/`
   * getWards(unitNos, cb) - returns an array of the above
@@ -47,13 +74,18 @@ API
   * getCurrentWardProfiles(cb) - calls `getStakeInfo` and `getWard` on the user's ward
   * getHousehold(profileOrId, cb) - takes a member profile or a member id and return '/mem/householdProfile/'
   * getHouseholds(profilesOrIds, cb) - takes an array of member profiles or ids
+  * clear() - clears the PouchDB cache
 
-experimental methods
+experimental stuff
 ---
 
-  * signin(cb) - doesn't always work - attempts to have the user login through a popup...
+  * signin(cb) - (class method) doesn't always work - attempts to have the user login through a popup...
     an `iframe` with `window.postMessage` might be a better choice
     `$('#iframe_').contents().find('body').append(script)`
+  * init
+    * events
+      * profile - a single complete profile (memberList + household + photo) has been downloaded
+      * memberList - another ward list has been downloaded (useful for keeping track of total / yet-to-download)
 
 todo
 ---
