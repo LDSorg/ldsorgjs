@@ -1,0 +1,29 @@
+{
+  "name": "ldsorg",
+  "version": "1.0.0",
+  "description": "Unofficial JavaScript Library for LDS.org",
+  "main": "ldsorg.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LDSorg/ldsorgjs.git"
+  },
+  "keywords": [
+    "ysa",
+    "msa",
+    "lds",
+    "lds.org",
+    "mormon",
+    "mormon.org",
+    "ward",
+    "directory",
+    "stake"
+  ],
+  "author": "AJ ONeal <coolaj86@gmail.com> (http://coolaj86.info/)",
+  "license": "Apache2",
+  "bugs": {
+    "url": "https://github.com/LDSorg/ldsorgjs/issues"
+  }
+}
