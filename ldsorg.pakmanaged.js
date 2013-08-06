@@ -181,10 +181,6 @@ var global = Function("return this;")();
       }
       forEachAsync.BREAK = {};
     
-      function everyAsync(arr, fn, thisArg) {
-        forEachAsync(arr, );
-      }
-    
       exports = forEachAsync.forEachAsync = forEachAsync;
       if ('undefined' !== module) {
         module.exports = forEachAsync;
