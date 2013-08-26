@@ -109,6 +109,10 @@ the photo object are added to the household objects from the member list.
 
     * `unitNo` is the number of returned by `LdsOrg#getWards` as `wardUnitNo`
 
+The following keys are included:
+
+    * ["canViewMapLink", "hasEditRights", "headOfHousehold", "householdInfo", "id", "inWard", "isEuMember", "otherHouseholdMembers", "spouse", "ward"]
+
 LdsOrg#getWards(unitNos, cb)
 ---
 
