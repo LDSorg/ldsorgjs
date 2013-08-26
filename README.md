@@ -120,7 +120,7 @@ Initializes internal vars and grabs PouchDB via script tag.
     * initCompleteCallback - fires when the library is ready to use
     * events - useful for tracking download progress, see experimental below
 
-LdsOrg#getStakeInfo(cb)
+LdsOrg#getCurrentStakeInfo(cb)
 ---
 
 returns a combination of `/unit/current-user-ward-stake/` and `/unit/current-user-units/`
