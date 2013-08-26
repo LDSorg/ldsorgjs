@@ -1,3 +1,4 @@
+// Part of FuturesJS. See https://github.com/FuturesJS/forEachAsync
 /*jshint -W054 */
 (function (exports) {
   "use strict";
