@@ -58,26 +58,54 @@ API
 var LdsOrg = require('ldsorg');
 ```
 
-Class Methods
+**Class Methods**
 
-  * [`LdsOrg.create()`](#ldsorgcreate)
+  - [`LdsOrg.create()`](#ldsorgcreate)
 
-Instance Methods
+**Instance Methods**
 
-  * [`LdsOrg#init(initCompleteCallback, events)`](#ldsorginitcb-events)
-    * `initCompleteCallback`
-    * `events`
-  * [`LdsOrg#getStakeInfo(cb)`](#ldsorggetstakeinfocb)
-  * [`LdsOrg#getWard(unitNo, cb)`](#ldsorggetwardunitno-cb)
-    * `unitNo`
-  * [`LdsOrg#getWards(unitNos, cb)`](#ldsorggetwardsunitnos-cb)
-  * [`LdsOrg#getCurrentStakeProfiles(cb)`](#ldsorggetcurrentstakeprofilescb)
-  * [`LdsOrg#getCurrentWardProfiles(cb)`](#ldsorggetcurrentwardprofilescb)
-  * [`LdsOrg#getHousehold(profileOrId, cb)`](#ldsorggethouseholdprofileorid-cb)
-    * `id`
-    * `profile`
-  * [`LdsOrg#getHouseholds(profilesOrIds, cb)`](#ldsorggethouseholdsprofilesorids-cb)
-  * [`LdsOrg#clear()`](#ldsorgclear)
+  - [`#init(initCompleteCallback, events)`](#ldsorginitcb-events)
+    - `initCompleteCallback`
+    - `events`
+  - [`#getStakeInfo(cb)`](#ldsorggetstakeinfocb)
+  - [`#getWard(unitNo, cb)`](#ldsorggetwardunitno-cb)
+    - `unitNo`
+  - [`#getWards(unitNos, cb)`](#ldsorggetwardsunitnos-cb)
+  - [`#getCurrentStakeProfiles(cb)`](#ldsorggetcurrentstakeprofilescb)
+  - [`#getCurrentWardProfiles(cb)`](#ldsorggetcurrentwardprofilescb)
+  - [`#getHousehold(profileOrId, cb)`](#ldsorggethouseholdprofileorid-cb)
+    - `id`
+    - `profile`
+  - [`#getHouseholds(profilesOrIds, cb)`](#ldsorggethouseholdsprofilesorids-cb)
+  - [`#clear()`](#ldsorgclear)
+
+**Instance properties**
+
+As the various methods above return successfully,
+the in-memory cache of the various organization units is updated.
+
+All the things
+
+  - `#areas`
+  - `#stakes`
+  - `#wards`
+
+Home Area
+
+  - `#homeAreaId`
+  - `#homeArea`
+  - `#homeAreaStakes`
+
+Home Stake
+
+  - `#homeStakeId`
+  - `#homeStake`
+  - `#homeStakeWards`
+
+Home Ward
+
+  - `#homeWardId`
+  - `#homeWard` 
 
 LdsOrg.create()
 ---
