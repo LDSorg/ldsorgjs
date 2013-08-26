@@ -60,21 +60,24 @@ var LdsOrg = require('ldsorg');
 
 Class Methods
 
-  * [LdsOrg.create()](ldsorgcreate)
+  * [`LdsOrg.create()`](#ldsorgcreate)
 
 Instance Methods
 
-  * [LdsOrg#init(initCompleteCallback, events)](#ldsorginitcb-events)
-    * initCompleteCallback
-    * events
-  * [LdsOrg#getStakeInfo(cb)](#ldsorggetstakeinfocb)
-  * [LdsOrg#getWard(unitNo, cb)](#ldsorggetwardunitno-cb)
-  * [LdsOrg#getWards(unitNos, cb)](#ldsorggetwardsunitnos-cb)
-  * [LdsOrg#getCurrentStakeProfiles(cb)](#ldsorggetcurrentstakeprofilescb)
-  * [LdsOrg#getCurrentWardProfiles(cb)](#ldsorggetcurrentwardprofilescb)
-  * [LdsOrg#getHousehold(profileOrId, cb)](#ldsorggethouseholdprofileorid-cb)
-  * [LdsOrg#getHouseholds(profilesOrIds, cb)](#ldsorggethouseholdsprofilesorids-cb)
-  * [LdsOrg#clear()](#ldsorgclear)
+  * [`LdsOrg#init(initCompleteCallback, events)`](#ldsorginitcb-events)
+    * `initCompleteCallback`
+    * `events`
+  * [`LdsOrg#getStakeInfo(cb)`](#ldsorggetstakeinfocb)
+  * [`LdsOrg#getWard(unitNo, cb)`](#ldsorggetwardunitno-cb)
+    * `unitNo`
+  * [`LdsOrg#getWards(unitNos, cb)`](#ldsorggetwardsunitnos-cb)
+  * [`LdsOrg#getCurrentStakeProfiles(cb)`](#ldsorggetcurrentstakeprofilescb)
+  * [`LdsOrg#getCurrentWardProfiles(cb)`](#ldsorggetcurrentwardprofilescb)
+  * [`LdsOrg#getHousehold(profileOrId, cb)`](#ldsorggethouseholdprofileorid-cb)
+    * `id`
+    * `profile`
+  * [`LdsOrg#getHouseholds(profilesOrIds, cb)`](#ldsorggethouseholdsprofilesorids-cb)
+  * [`LdsOrg#clear()`](#ldsorgclear)
 
 LdsOrg.create()
 ---
@@ -99,6 +102,8 @@ LdsOrg#getWard(unitNo, cb)
 
 returns a combination of `/mem/member-list/:ward_unit_no` and `/mem/wardDirectory/photos/:ward_unit_no`
 
+    * `unitNo` is the number of returned by `LdsOrg#getWards` as `wardUnitNo`
+
 LdsOrg#getWards(unitNos, cb)
 ---
 
@@ -114,10 +119,13 @@ LdsOrg#getCurrentWardProfiles(cb)
 
 calls `getStakeInfo` and `getWard` on the user's ward
 
-LdsOrg#getHousehold(profileOrId, cb)
+LdsOrg#getHousehold(profilesOrId, cb)
 ---
 
 takes a member profile or a member id and return `/mem/householdProfile/`
+
+    * `profile` is an element of the array returned by `LdsOrg#getCurrentWardProfiles()`
+    * `id` represents the head of household such as `householdId`, `headOfHouseIndividualId`, or `headOfHouse.individualId` of `LdsOrg#getCurrentWardProfiles()`
 
 LdsOrg#getHouseholds(profileOrIds, cb)
 ---
