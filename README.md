@@ -100,7 +100,12 @@ returns a combination of `/unit/current-user-ward-stake/` and `/unit/current-use
 LdsOrg#getWard(unitNo, cb)
 ---
 
-returns a combination of `/mem/member-list/:ward_unit_no` and `/mem/wardDirectory/photos/:ward_unit_no`
+returns a combination of
+[`/mem/member-list/:ward_unit_no`](https://github.com/LDSorg/lds.org-api-documentation/blob/master/README.md#ward)
+and
+[`/mem/wardDirectory/photos/:ward_unit_no`](https://github.com/LDSorg/lds.org-api-documentation/blob/master/README.md#photos) -
+meaning that all of the fields from the elements of
+the photo object are added to the household objects from the member list.
 
     * `unitNo` is the number of returned by `LdsOrg#getWards` as `wardUnitNo`
 
