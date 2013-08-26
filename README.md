@@ -60,24 +60,77 @@ var LdsOrg = require('ldsorg');
 
 Class Methods
 
-  * create
+  * [LdsOrg.create()](ldsorgcreate)
 
 Instance Methods
 
-  * init(initCompleteCallback, events) - initializes internal vars and grabs PouchDB via script tag
+  * [LdsOrg#init(initCompleteCallback, events)](#ldsorginitcb-events)
+    * initCompleteCallback
+    * events
+  * [LdsOrg#getStakeInfo(cb)](#ldsorggetstakeinfocb)
+  * [LdsOrg#getWard(unitNo, cb)](#ldsorggetwardunitno-cb)
+  * [LdsOrg#getWards(unitNos, cb)](#ldsorggetwardsunitnos-cb)
+  * [LdsOrg#getCurrentStakeProfiles(cb)](#ldsorggetcurrentstakeprofilescb)
+  * [LdsOrg#getCurrentWardProfiles(cb)](#ldsorggetcurrentwardprofilescb)
+  * [LdsOrg#getHousehold(profileOrId, cb)](#ldsorggethouseholdprofileorid-cb)
+  * [LdsOrg#getHouseholds(profilesOrIds, cb)](#ldsorggethouseholdsprofilesorids-cb)
+  * [LdsOrg#clear()](#ldsorgclear)
+
+LdsOrg.create()
+---
+
+Creates and returns a new `ldsorg` object.
+
+LdsOrg#init(cb, events)
+---
+
+Initializes internal vars and grabs PouchDB via script tag.
+
     * initCompleteCallback - fires when the library is ready to use
     * events - useful for tracking download progress, see experimental below
-  * getStakeInfo(cb) - returns a combination of `/unit/current-user-ward-stake/` and `/unit/current-user-units/`
-  * getWard(unitNo, cb) - returns a combination of `/mem/member-list/:ward_unit_no` and `/mem/wardDirectory/photos/`
-  * getWards(unitNos, cb) - returns an array of the above
-  * getCurrentStakeProfiles(cb) - calls `getStakeInfo` and `getWards` to get the user's current stake directory
-  * getCurrentWardProfiles(cb) - calls `getStakeInfo` and `getWard` on the user's ward
-  * getHousehold(profileOrId, cb) - takes a member profile or a member id and return '/mem/householdProfile/'
-  * getHouseholds(profilesOrIds, cb) - takes an array of member profiles or ids
-  * clear() - clears the PouchDB cache
+
+LdsOrg#getStakeInfo(cb)
+---
+
+returns a combination of `/unit/current-user-ward-stake/` and `/unit/current-user-units/`
+
+LdsOrg#getWard(unitNo, cb)
+---
+
+returns a combination of `/mem/member-list/:ward_unit_no` and `/mem/wardDirectory/photos/:ward_unit_no`
+
+LdsOrg#getWards(unitNos, cb)
+---
+
+returns an array of the above
+
+LdsOrg#getCurrentStakeProfiles(cb)
+---
+
+calls `getStakeInfo` and `getWards` to get the user's current stake directory
+
+LdsOrg#getCurrentWardProfiles(cb)
+---
+
+calls `getStakeInfo` and `getWard` on the user's ward
+
+LdsOrg#getHousehold(profileOrId, cb)
+---
+
+takes a member profile or a member id and return `/mem/householdProfile/`
+
+LdsOrg#getHouseholds(profileOrIds, cb)
+---
+
+takes an array of member profiles or ids
+
+LdsOrg#clear()
+---
+
+clears the PouchDB cache
 
 experimental stuff
----
+===
 
   * signin(cb) - (class method) doesn't always work - attempts to have the user login through a popup...
     an `iframe` with `window.postMessage` might be a better choice
