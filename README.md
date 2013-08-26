@@ -119,7 +119,7 @@ LdsOrg#getCurrentWardProfiles(cb)
 
 calls `getStakeInfo` and `getWard` on the user's ward
 
-LdsOrg#getHousehold(profilesOrId, cb)
+LdsOrg#getHousehold(profileOrId, cb)
 ---
 
 takes a member profile or a member id and return `/mem/householdProfile/`
@@ -127,7 +127,7 @@ takes a member profile or a member id and return `/mem/householdProfile/`
     * `profile` is an element of the array returned by `LdsOrg#getCurrentWardProfiles()`
     * `id` represents the head of household such as `householdId`, `headOfHouseIndividualId`, or `headOfHouse.individualId` of `LdsOrg#getCurrentWardProfiles()`
 
-LdsOrg#getHouseholds(profileOrIds, cb)
+LdsOrg#getHouseholds(profilesOrIds, cb)
 ---
 
 takes an array of member profiles or ids
