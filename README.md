@@ -107,6 +107,9 @@ and
 meaning that all of the fields from the elements of
 the photo object are added to the household objects from the member list.
 
+**Note**: The indentically named `householdName` is renamed to `householdPhotoName`
+as the value may be different.
+
     * `unitNo` is the number of returned by `LdsOrg#getWards` as `wardUnitNo`
 
 LdsOrg#getWards(unitNos, cb)

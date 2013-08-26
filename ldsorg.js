@@ -5,7 +5,6 @@
     , Join = require('./join')
     , forEachAsync = require('./forEachAsync')
     , ldsDirP
-    , $events
     ;
 
   function getImageData(next, imgSrc) {
@@ -50,21 +49,23 @@
   ldsDirP._ludrsPhotos = ldsDirP._ludrsBase + '/mem/wardDirectory/photos/';
 
   ldsDirP.init = function (cb, fns) {
-    $events = $('body');
     var me = this
       ;
 
     me.areas = null;
-    me.homeArea = null;
+    me.stakes = [];
+    me.wards = [];
+
     me.homeAreaId = null;
+    me.homeArea = null;
+    me.homeAreaStakes = null;
 
-    me.stakes = null;
-    me.homeStake = null;
     me.homeStakeId = null;
+    me.homeStake = null;
+    me.homeStakeWards = null;
 
-    me.wards = null;
-    me.homeWard = null;
     me.homeWardId = null;
+    me.homeWard = null;
 
     me._listeners = fns || {};
 
@@ -81,10 +82,22 @@
 
   ldsDirP.getHousehold = function (fn, profileOrId) {
     var me = this
-      , jointProfile = profileOrId.householdId && profileOrId || {}
-      , id = profileOrId.householdId || profileOrId
-      , profileId = 'profile-' + id
+      , jointProfile
+      , id
+      , profileId
       ;
+
+    if ('object' === typeof profileOrId) {
+      jointProfile = profileOrId;
+      id = jointProfile.householdId;
+    } else {
+      id = profileOrId;
+      jointProfile = {
+        householdId: id
+      };
+    }
+
+    profileId = 'profile-' + id;
 
     function onResult(profile) {
       if (me._listeners.profile) {
@@ -95,7 +108,10 @@
     }
 
     me.store.get(profileId, function (err, profile) {
-      var photoUrl
+      var familyPhotoUrl
+        , individualPhotoUrl
+        , familyPhotoId
+        , individualPhotoId
         ;
 
       if (profile && profile.imageData) {
@@ -105,20 +121,30 @@
 
       $.getJSON(me._ludrsHousehold + id, function (_profile) {
         function orThat(key) {
-          jointProfile[key] = jointProfile[key] || _profile[key];
+          if (jointProfile[key]) {
+            console.warn("'" + key + "' already exists, not overwriting");
+          } else {
+            jointProfile[key] = _profile[key];
+          }
         }
 
-        orThat('canViewMapLink');
-        orThat('hasEditRights');
-        orThat('headOfHousehold');
-        orThat('householdInfo');
-        orThat('id');
+        // Object.keys(household)
+        [ "canViewMapLink"
+        , "hasEditRights"
+        , "headOfHousehold"
+        , "householdInfo"
+        , "id"
+        , "inWard"
+        , "isEuMember"
+        , "otherHouseholdMembers"
+        , "spouse"
+        , "ward"
+        ].forEach(function (key) {
+          orThat(key);
+        });
+
+        // may have been added before
         orThat('imageData');
-        orThat('inWard');
-        orThat('isEuMember');
-        orThat('otherHouseholdMembers');
-        orThat('spouse');
-        orThat('ward');
 
         function saveProfile(err, dataUrl) {
           jointProfile._id = profileId;
@@ -128,9 +154,19 @@
           onResult();
         }
 
-        photoUrl = jointProfile.headOfHousehold.photoUrl || jointProfile.householdInfo.photoUrl || jointProfile.photoUrl;
-        if (photoUrl) {
-          getImageData(saveProfile, photoUrl);
+        individualPhotoUrl = jointProfile.headOfHousehold.photoUrl;
+        individualPhotoId = jointProfile.headOfHousehold.imageId;
+        familyPhotoUrl = jointProfile.householdInfo.photoUrl;
+        familyPhotoId = jointProfile.householdInfo.imageId;
+
+        if (!familyPhotoUrl) {
+          // this is the one from the ward photo list resource
+          familyPhotoUrl = jointProfile.photoUrl;
+        }
+
+        // TODO save image to db separately using imageId
+        if (familyPhotoUrl || individualPhotoUrl) {
+          getImageData(saveProfile, familyPhotoUrl || individualPhotoUrl);
         } else {
           saveProfile('no photourl', null);
         }
@@ -155,7 +191,9 @@
     });
   };
 
-  ldsDirP.getWard = function (fn, wardUnitNo) {
+  // TODO optionally include fresh pics
+  // (but always include phone from photos)
+  ldsDirP.getWard = function (fn, wardUnitNo, noPics) {
     var me = this
       , join = Join.create()
       , memberListId = 'member-list-' + wardUnitNo
@@ -171,7 +209,14 @@
     }
 
     me.store.get(memberListId, function (err, fullMemberList) {
-      if (fullMemberList) {
+      fullMemberList = fullMemberList || {};
+
+      // The photo resource becomes invalid after 10 minutes
+      var staleness = Date.now() - fullMemberList.updatedAt
+        , fresh = staleness < 10 * 60 * 1000
+        ;
+
+      if (noPics || fresh) {
         console.log('memberList', fullMemberList);
         onWardResult(fullMemberList.memberList);
         return;
@@ -197,6 +242,8 @@
             // householdPhotoName
             // phoneNumber
             // photoUrl
+            member.householdPhotoName = photo.householdName;
+            delete photo.householdName;
             Object.keys(photo).forEach(function (key) {
               if (member[key]) {
                 console.warn("member profile now includes '" + key + "', not overwriting");
@@ -211,6 +258,7 @@
           _id: memberListId
         , _rev: (fullMemberList||{})._rev
         , memberList: memberList
+        , updatedAt: Date.now()
         };
         me.store.put(fullMemberList);
         onWardResult(fullMemberList.memberList);
@@ -218,7 +266,7 @@
     });
   };
 
-  ldsDirP.getWards = function (fn, wardUnitNos) {
+  ldsDirP.getWards = function (fn, wardUnitNos, noPics) {
     var me = this
       , profileIds = []
       ;
@@ -229,7 +277,7 @@
           profileIds.push(m.headOfHouseIndividualId);
         });
         next();
-      }, wardUnitNo);
+      }, wardUnitNo, noPics);
     }
 
     forEachAsync(wardUnitNos, pushMemberIds).then(function () {
@@ -238,7 +286,8 @@
     });
   };
 
-  ldsDirP.getStakeInfo = function (fn) {
+  // Current Stake
+  ldsDirP.getCurrentStakeInfo = function (fn) {
     var me = this
       , areaInfoId = 'area-info'
       , stakesInfoId = 'stakes-info'
@@ -246,13 +295,21 @@
 
     function onResult(areaInfo, stakesInfo) {
       me.homeArea = areaInfo;
+
       me.homeAreaId = areaInfo.areaUnitNo;
       me.homeStakeId = areaInfo.stakeUnitNo;
       me.homeWardId = areaInfo.wardUnitNo;
 
-      me.stakes = stakesInfo;
+      me.homeAreaStakes = stakesInfo;
+
+      // TODO loop through and check homeStakeId
       me.homeStake = me.stakes[0];
-      me.wards = me.homeStake.wards;
+      me.homeStakeWards = me.homeStake.wards;
+
+      // TODO only add the stakes that haven't been added
+      //me.stakes = me.stakes.concat(stakesInfo);
+      // TODO only add the wards that haven't been added
+      //me.wards = me.wards.concat(me.homeStake.wards);
       fn();
     }
 
@@ -290,32 +347,28 @@
       });
     });
   };
+  // TODO getStakeInfo should accept id
+  ldsDirP.getStakeInfo = ldsDirP.getCurrentStakeInfo;
 
   ldsDirP.getCurrentStakeProfiles = function (fn) {
     var me = this
       ;
 
     function onStakeInfo() {
-      var wards = me.wards
+      var wards = me.homeStakeWards
         , wardUnitNos = []
         ;
-
-      if (!$('#js-counter').length) {
-        $('body').prepend(
-          '<div style="'
-            + 'z-index: 100000; position:fixed;'
-            + 'top:40%; width:200px; height:50px;'
-            + 'right: 50%; background-color:black;'
-          + '" id="js-counter">0</div>'
-        );
-      }
 
       // TODO use underscore.pluck
       wards.forEach(function (w) {
         wardUnitNos.push(w.wardUnitNo);
       });
 
-      me.getWards(fn, me.homeStake.wards);
+      if (me._listeners.stake) {
+        me._listeners.stake(wards);
+      }
+
+      me.getWards(fn, me.homeStakeWards);
     }
 
     me.getStakeInfo(onStakeInfo);
@@ -330,8 +383,9 @@
     });
   };
   ldsDirP.clear = function () {
+    var Pouch = require('Pouch');
     console.info('clearing PouchDB cache');
-    window.Pouch.destroy('wardmenu-ludrs');
+    Pouch.destroy('wardmenu-ludrs');
   };
 
   LdsDir.signin = ldsDirP.signin = function (cb) {
@@ -367,6 +421,9 @@
     }
 
     function getLoginStatus() {
+      var $events = $('body')
+        ;
+
       $.ajax({
           //url: me._ludrsUserId
           url: 'https://www.lds.org/directory/'
