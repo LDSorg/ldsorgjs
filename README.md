@@ -178,6 +178,7 @@ The following keys are included:
   * (if profile is provided) Member List Element: ["children", "coupleName", "headOfHouse", "headOfHouseIndividualId", "householdName", "isProfilePrivate", "spouse"]
   * (if profile is provided) Photos\*: ["householdId", "householdName", "phoneNumber", "photoUrl"]
   * \*Note: `householdName` from Photos is renamed as `householdPhotoName`
+  * \*Note: `imageData` is the dataUrl from the household or individual `photoUrl` (this may change to `familyImageData` and `individualImageData`).
 
 LdsOrg#getHouseholds(profilesOrIds, cb)
 ---
