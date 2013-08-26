@@ -11,7 +11,7 @@
         ;
 
       return {
-          when: function (_fn) {
+          then: function (_fn) {
             fn = _fn;
             len = things.length;
             if (complete === len) {

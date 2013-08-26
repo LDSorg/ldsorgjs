@@ -46,6 +46,8 @@
   ldsDirP._ludrsWards = ldsDirP._ludrsBase + '/unit/current-user-units/';
   ldsDirP._ludrsHousehold = ldsDirP._ludrsBase + '/mem/householdProfile/';
   ldsDirP._ludrsUserId = ldsDirP._ludrsBase + '/mem/current-user-id/';
+  ldsDirP._ludrsMemberList = ldsDirP._ludrsBase + '/mem/member-list/';
+  ldsDirP._ludrsPhotos = ldsDirP._ludrsBase + '/mem/wardDirectory/photos/';
 
   ldsDirP.init = function (cb, fns) {
     $events = $('body');
@@ -175,11 +177,12 @@
         return;
       }
 
-      $.getJSON(me._ludrsBase + '/mem/member-list/' + wardUnitNo, join.add());
-      // https://www.lds.org/directory/services/ludrs/mem/wardDirectory/photos/228079
-      $.getJSON(me._ludrsBase + '/mem/wardDirectory/photos/' + wardUnitNo, join.add());
+      // https://www.lds.org/directory/services/ludrs/mem/member-list/:ward_unit_number
+      $.getJSON(me._ludrsMemberList + wardUnitNo, join.add());
+      // https://www.lds.org/directory/services/ludrs/mem/wardDirectory/photos/:ward_unit_number
+      $.getJSON(me._ludrsPhotos + wardUnitNo, join.add());
 
-      join.when(function (memberListArgs, photoListArgs) {
+      join.then(function (memberListArgs, photoListArgs) {
         var memberList = memberListArgs[0]
           , photoList = photoListArgs[0]
           ;
@@ -190,14 +193,25 @@
               return;
             }
 
-            member.householdId = photo.householdId;
-            member.householdPhotoName = photo.householdName;
-            member.phoneNumber = photo.phoneNumber;
-            member.photoUrl = member.photoUrl || photo.photoUrl;
+            // householdId
+            // householdPhotoName
+            // phoneNumber
+            // photoUrl
+            Object.keys(photo).forEach(function (key) {
+              if (member[key]) {
+                console.warn("member profile now includes '" + key + "', not overwriting");
+              } else {
+                member[key] = photo[key];
+              }
+            });
           });
         });
 
-        fullMemberList = { _id: memberListId, _rev: (fullMemberList||{})._rev, memberList: memberList };
+        fullMemberList = {
+          _id: memberListId
+        , _rev: (fullMemberList||{})._rev
+        , memberList: memberList
+        };
         me.store.put(fullMemberList);
         onWardResult(fullMemberList.memberList);
       });
