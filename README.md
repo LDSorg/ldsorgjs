@@ -107,11 +107,15 @@ and
 meaning that all of the fields from the elements of
 the photo object are added to the household objects from the member list.
 
-    * `unitNo` is the number of returned by `LdsOrg#getWards` as `wardUnitNo`
+  * `unitNo` is the number of returned by `LdsOrg#getWards` as `wardUnitNo`
 
 The following keys are included:
 
-    * ["canViewMapLink", "hasEditRights", "headOfHousehold", "householdInfo", "id", "inWard", "isEuMember", "otherHouseholdMembers", "spouse", "ward"]
+  * Member List Element: ["children", "coupleName", "headOfHouse", "headOfHouseIndividualId", "householdName", "isProfilePrivate", "spouse"]
+    * headOfHouse: ["directoryName", "gender", "individualId", "latinName", "latinNameDifferent", "preferredName", "surname"]
+    * spouse: ["directoryName", "gender", "individualId", "latinName", "latinNameDifferent", "preferredName", "surname"] 
+  * Photos\*: ["householdId", "householdName", "phoneNumber", "photoUrl"]
+  * \*Note: `householdName` from Photos is renamed as `householdPhotoName`
 
 LdsOrg#getWards(unitNos, cb)
 ---
@@ -135,6 +139,17 @@ takes a member profile or a member id and return `/mem/householdProfile/`
 
     * `profile` is an element of the array returned by `LdsOrg#getCurrentWardProfiles()`
     * `id` represents the head of household such as `householdId`, `headOfHouseIndividualId`, or `headOfHouse.individualId` of `LdsOrg#getCurrentWardProfiles()`
+
+The following keys are included:
+
+  * Household Profile: ["canViewMapLink", "hasEditRights", "headOfHousehold", "householdInfo", "id", "inWard", "isEuMember", "otherHouseholdMembers", "spouse", "ward"]
+    * headOfHouseHold: ["address", "addressLevel", "birthDateLevel", "email", "emailLevel", "imageId", "imageLevel", "individualId", "isAllPrivate", "mapLevel", "masterLevel", "name", "phone", "phoneLevel", "photoUrl"]
+    * householdInfo: ["address", "addressLevel", "birthDateLevel", "email", "emailLevel", "imageId", "imageLevel", "individualId", "isAllPrivate", "mapLevel", "masterLevel", "name", "phone", "phoneLevel", "photoUrl"]
+        * address: ["addr1", "addr2", "addr3", "addr4", "addr5", "city", "countryCode", "countryIsoAlphaCode", "district", "groupId", "latitude", "locallyVerifiedCode", "longitude", "postal", "state", "stateCode", "streetAddr1", "streetAddr2"]
+    * ward: ["areaUnitNo", "branch", "district", "mission", "stake", "stakeName", "stakeUnitNo", "ward", "wardName", "wardUnitNo"]
+  * (if profile is provided) Member List Element: ["children", "coupleName", "headOfHouse", "headOfHouseIndividualId", "householdName", "isProfilePrivate", "spouse"]
+  * (if profile is provided) Photos\*: ["householdId", "householdName", "phoneNumber", "photoUrl"]
+  * \*Note: `householdName` from Photos is renamed as `householdPhotoName`
 
 LdsOrg#getHouseholds(profilesOrIds, cb)
 ---
