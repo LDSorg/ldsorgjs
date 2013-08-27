@@ -285,6 +285,7 @@ var global = Function("return this;")();
       };
     
       ldsDirP.getHousehold = function (fn, profileOrId) {
+        console.log('getHousehold', profileOrId);
         var me = this
           , jointProfile
           , id
@@ -402,6 +403,7 @@ var global = Function("return this;")();
       // (but always include phone from photos)
       // TODO most of this logic should be moved to getHouseholds
       ldsDirP.getWard = function (fn, wardOrId, opts) {
+        console.log('getWard', wardOrId, opts);
         opts = opts || {};
     
         var me = this
@@ -531,6 +533,7 @@ var global = Function("return this;")();
       };
     
       ldsDirP.getStake = function (fn, stakeOrId, opts) {
+        console.log('getStake', stakeOrId);
         var me = this
           , stake
           , id
@@ -666,33 +669,7 @@ var global = Function("return this;")();
         });
       };
     
-      // TODO getStakeInfo should accept id (but I don't know the url)
-      ldsDirP.getStakeInfo = ldsDirP.getCurrentMeta;
-    
-      ldsDirP.getCurrentStakeProfiles = function (fn) {
-        var me = this
-          ;
-    
-        function onStakeInfo() {
-          var wards = me.homeStakeWards
-            , wardUnitNos = []
-            ;
-    
-          // TODO use underscore.pluck
-          wards.forEach(function (w) {
-            wardUnitNos.push(w.wardUnitNo);
-          });
-    
-          function gotStake(a, b, c) {
-            fn(a, b, c);
-          }
-          me.getWards(gotStake, me.homeStakeWards);
-        }
-    
-        onStakeInfo();
-      };
-    
-      ldsDirP.getCurrentWardProfiles = function (fn) {
+      ldsDirP.getCurrentWard = function (fn) {
         var me = this
           ;
     

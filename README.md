@@ -39,9 +39,10 @@ The easiest way to play with ldsorgjs is to
           ;
 
         function initCompleteCb() {
-          ldsOrg.getCurrentWardProfiles(function (profiles) {
+          ldsOrg.getCurrentWard(function (ward) {
             // these profiles are from the memberList
-            // call ldsOrg.getHousehold(cb, profile) for the real profile
+            console.log(ward.households);
+            // call ldsOrg.getHousehold(cb, ward.households[i]) for the real profile
           });
         }
 
@@ -136,7 +137,7 @@ calls `getStake` and `getWards` to get the user's current stake directory
 LdsOrg#getCurrentWard(cb, opts)
 ---
 
-calls `getStakeInfo` and `getWard` on the user's ward
+calls `getCurrentMeta` and `getWard` on the user's ward
 
 LdsOrg#getWard(cb, ward)
 ---
@@ -168,8 +169,8 @@ LdsOrg#getHousehold(cb, household)
 
 takes a member profile or a member id and return `/mem/householdProfile/`
 
-    * `profile` is an element of the array returned by `LdsOrg#getCurrentWardProfiles()`
-    * `id` represents the head of household such as `householdId`, `headOfHouseIndividualId`, or `headOfHouse.individualId` of `LdsOrg#getCurrentWardProfiles()`
+    * `profile` is an element of the array returned by `LdsOrg#getCurrentWard()`
+    * `id` represents the head of household such as `householdId`, `headOfHouseIndividualId`, or `headOfHouse.individualId` of `LdsOrg#getCurrentWard()`
 
 The following keys are included:
 
