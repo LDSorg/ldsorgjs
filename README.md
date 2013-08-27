@@ -198,8 +198,10 @@ experimental stuff
     `$('#iframe_').contents().find('body').append(script)`
   * init
     * events
-      * profile - a single complete profile (memberList + household + photo) has been downloaded
-      * memberList - another ward list has been downloaded (useful for keeping track of total / yet-to-download)
+      * households - another ward list has been downloaded (useful for keeping track of total / yet-to-download)
+      * household - a single complete profile (memberList + household + photo) has been downloaded
+      * stakes - a list of stake metadata
+      * wards - a list of ward metadata
 
 todo
 ---
