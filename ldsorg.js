@@ -40,13 +40,17 @@
   }
   ldsDirP = LdsDir.prototype;
 
+  // URLs
   ldsDirP._ludrsBase = 'https://www.lds.org/directory/services/ludrs';
-  ldsDirP._ludrsStake = ldsDirP._ludrsBase + '/unit/current-user-ward-stake/';
-  ldsDirP._ludrsWards = ldsDirP._ludrsBase + '/unit/current-user-units/';
-  ldsDirP._ludrsHousehold = ldsDirP._ludrsBase + '/mem/householdProfile/';
-  ldsDirP._ludrsUserId = ldsDirP._ludrsBase + '/mem/current-user-id/';
+
+  ldsDirP._ludrsCurrentStake = ldsDirP._ludrsBase + '/unit/current-user-units/';
+  ldsDirP._ludrsCurrentMeta = ldsDirP._ludrsBase + '/unit/current-user-ward-stake/';
+  ldsDirP._ludrsCurrentUserId = ldsDirP._ludrsBase + '/mem/current-user-id/';
+
   ldsDirP._ludrsMemberList = ldsDirP._ludrsBase + '/mem/member-list/';
   ldsDirP._ludrsPhotos = ldsDirP._ludrsBase + '/mem/wardDirectory/photos/';
+
+  ldsDirP._ludrsHousehold = ldsDirP._ludrsBase + '/mem/householdProfile/';
 
   ldsDirP.init = function (cb, fns) {
     var me = this
@@ -75,7 +79,7 @@
       var Pouch = require('Pouch');
       new Pouch('wardmenu-ludrs', function (err, db) {
         me.store = db;
-        cb();
+        me.getCurrentMeta(cb);
       });
     }, 'text');
   };
@@ -102,6 +106,9 @@
     function onResult(profile) {
       if (me._listeners.profile) {
         me._listeners.profile(profile);
+      }
+      if (me._listeners.household) {
+        me._listeners.household(profile);
       }
 
       fn(profile);
@@ -193,39 +200,61 @@
 
   // TODO optionally include fresh pics
   // (but always include phone from photos)
-  ldsDirP.getWard = function (fn, wardUnitNo, noPics) {
+  // TODO most of this logic should be moved to getHouseholds
+  ldsDirP.getWard = function (fn, wardOrId, opts) {
+    opts = opts || {};
+
     var me = this
       , join = Join.create()
-      , memberListId = 'member-list-' + wardUnitNo
+      , ward
+      , id
+      , memberListId
       ;
 
-    function onWardResult(memberList) {
-      if (me._listeners.memberList) {
-        me._listeners.memberList(memberList);
-      }
-
-      me.myWardies = memberList;
-      fn(memberList);
+    if ('object' === typeof wardOrId) {
+      ward = wardOrId;
+      id = ward.wardUnitNo;
+    } else {
+      id = wardOrId;
+      ward = me.wards[id] || { wardUnitNo: id };
     }
 
-    me.store.get(memberListId, function (err, fullMemberList) {
-      fullMemberList = fullMemberList || {};
+    memberListId = id + '-ward';
+
+    function onWardResultFinal(ward, fireEvents) {
+      if (false !== fireEvents) {
+        onWardResult(ward);
+      }
+      fn(ward);
+    }
+    function onWardResult(ward) {
+      // This event fires when memberList is updated
+      if (me._listeners.ward) {
+        me._listeners.ward(ward);
+      }
+      if (me._listeners.households) {
+        me._listeners.households(ward.households);
+      }
+    }
+
+    me.store.get(memberListId, function (err, _ward) {
+      _ward = _ward || {};
 
       // The photo resource becomes invalid after 10 minutes
-      var staleness = Date.now() - fullMemberList.updatedAt
+      var staleness = Date.now() - _ward.updatedAt
         , fresh = staleness < 10 * 60 * 1000
         ;
 
-      if (noPics || fresh) {
-        console.log('memberList', fullMemberList);
-        onWardResult(fullMemberList.memberList);
+      if (false === opts.photos || fresh) {
+        console.log('memberList', _ward);
+        onWardResultFinal(_ward);
         return;
       }
 
       // https://www.lds.org/directory/services/ludrs/mem/member-list/:ward_unit_number
-      $.getJSON(me._ludrsMemberList + wardUnitNo, join.add());
+      $.getJSON(me._ludrsMemberList + id, join.add());
       // https://www.lds.org/directory/services/ludrs/mem/wardDirectory/photos/:ward_unit_number
-      $.getJSON(me._ludrsPhotos + wardUnitNo, join.add());
+      $.getJSON(me._ludrsPhotos + id, join.add());
 
       join.then(function (memberListArgs, photoListArgs) {
         var memberList = memberListArgs[0]
@@ -254,72 +283,160 @@
           });
         });
 
-        fullMemberList = {
-          _id: memberListId
-        , _rev: (fullMemberList||{})._rev
-        , memberList: memberList
-        , updatedAt: Date.now()
-        };
-        me.store.put(fullMemberList);
-        onWardResult(fullMemberList.memberList);
+        // TODO ward.households = memberList;
+        ward.households = memberList;
+        ward.updatedAt = Date.now();
+        ward._rev = (_ward||{})._rev;
+        ward._id = ward.wardUnitNo;
+
+        // store before getting all the thingcs
+        // TODO full restore with all the things
+        me.store.put(ward);
+
+        function getAllHouseholds() {
+          var households = []
+            ;
+
+          function getOneHousehold(next, household) {
+            households.push(household);
+            me.getHousehold(next, household);
+          }
+
+          function gotAllHouseholds() {
+            // this is a merger, so no info is lost
+            ward.households = households;
+            onWardResultFinal(ward, false);
+          }
+
+          forEachAsync(ward.households, getOneHousehold).then(gotAllHouseholds);
+        }
+
+        // a fullHousehold is the only way to get the individual photo
+        // go figure
+        if (opts.fullHouseholds) {
+          onWardResult(ward);
+          getAllHouseholds();
+        } else {
+          onWardResultFinal(ward);
+        }
       });
     });
   };
 
-  ldsDirP.getWards = function (fn, wardUnitNos, noPics) {
+  ldsDirP.getCurrentStake = function (fn, opts) {
     var me = this
-      , profileIds = []
       ;
 
-    function pushMemberIds(next, wardUnitNo) {
-      me.getWard(function (members) {
-        members.forEach(function (m) {
-          profileIds.push(m.headOfHouseIndividualId);
-        });
-        next();
-      }, wardUnitNo, noPics);
+    me.getStake(fn, me.homeStakeId, opts);
+  };
+
+  ldsDirP.getStake = function (fn, stakeOrId, opts) {
+    var me = this
+      , stake
+      , id
+      ;
+
+    // TODO find resource
+    if ('object' === typeof stakeOrId) {
+      stake = stakeOrId;
+      id = stake.stakeUnitNo;
+    } else {
+      id = stakeOrId;
+      stake = me.stakes[id] || { stakeUnitNo: id };
     }
 
-    forEachAsync(wardUnitNos, pushMemberIds).then(function () {
-      // me.getHouseholds(fn, profileIds);
-      fn();
+    function gotAllWards(wards) {
+      stake.wards = wards;
+
+      if (me._listeners.stake) {
+        me._listeners.stake(stake);
+      }
+
+      fn(stake);
+    }
+    me.getWards(gotAllWards, stake.wards, opts);
+  };
+
+  // wardsOrIds can be an array or map of wards or ids
+  ldsDirP.getWards = function (fn, wardsOrIds, opts) {
+    var me = this
+      , wards = []
+      ;
+
+    function getOneWard(next, wardOrId) {
+      function addWard(ward) {
+        wards.push(ward);
+        next();
+      }
+      me.getWard(addWard, wardOrId, opts);
+    }
+
+    if (!Array.isArray(wardsOrIds) && 'object' === typeof wardsOrIds) {
+      wardsOrIds = Object.keys(wardsOrIds).map(function (key) {
+        return wardsOrIds[key];
+      });
+    }
+    forEachAsync(wardsOrIds, getOneWard).then(function () {
+      fn(wards);
     });
   };
 
   // Current Stake
-  ldsDirP.getCurrentStakeInfo = function (fn) {
+  ldsDirP.getCurrentMeta = function (fn) {
     var me = this
       , areaInfoId = 'area-info'
       , stakesInfoId = 'stakes-info'
       ;
 
-    function onResult(areaInfo, stakesInfo) {
-      me.homeArea = areaInfo;
+    function onMetaResult(currentInfo, stakesInfo) {
+      console.log(currentInfo);
+      console.log(stakesInfo);
 
-      me.homeAreaId = areaInfo.areaUnitNo;
-      me.homeStakeId = areaInfo.stakeUnitNo;
-      me.homeWardId = areaInfo.wardUnitNo;
+      me.wards = {};
+      me.stakes = {};
 
-      me.homeAreaStakes = stakesInfo;
+      me.homeArea = currentInfo;
 
-      // TODO loop through and check homeStakeId
-      me.homeStake = me.stakes[0];
-      me.homeStakeWards = me.homeStake.wards;
+      me.homeAreaId = currentInfo.areaUnitNo;
+      me.homeStakeId = currentInfo.stakeUnitNo;
+      me.homeWardId = currentInfo.wardUnitNo;
 
-      // TODO only add the stakes that haven't been added
-      //me.stakes = me.stakes.concat(stakesInfo);
-      // TODO only add the wards that haven't been added
-      //me.wards = me.wards.concat(me.homeStake.wards);
-      fn();
+      me.homeArea.stakes = stakesInfo.stakes;
+      me.homeAreaStakes = {};
+      console.log('1');
+      me.homeArea.stakes.forEach(function (stake) {
+        me.homeAreaStakes[stake.stakeUnitNo] = stake;
+        me.stakes[stake.stakeUnitNo] = stake;
+      });
+
+      me.homeStake = me.stakes[me.homeStakeId];
+      me.homeStakeWards = {};
+      console.log('2');
+      me.homeStake.wards.forEach(function (ward) {
+        me.homeStakeWards[ward.wardUnitNo] = ward;
+      });
+      console.log('3');
+      Object.keys(me.stakes).forEach(function (stakeNo, i) {
+        var stake = me.stakes[stakeNo]
+          ;
+        console.log('4', i, stake);
+        stake.wards.forEach(function (ward) {
+          me.wards[ward.wardUnitNo] = ward;
+        });
+      });
+
+      me.homeWard = me.wards[me.homeWardId];
+
+      fn(currentInfo);
     }
 
     function gotInfo(areaInfo, stakesInfo) {
       if (areaInfo && stakesInfo) {
-        onResult(areaInfo, stakesInfo);
+        onMetaResult(areaInfo, stakesInfo);
         return;
       }
 
-      $.getJSON(me._ludrsStake, function (_areaInfo) {
+      $.getJSON(me._ludrsCurrentMeta, function (_areaInfo) {
 
         _areaInfo._id = areaInfoId;
         if (areaInfo) {
@@ -328,15 +445,16 @@
         areaInfo = _areaInfo;
         me.store.put(areaInfo);
 
-        $.getJSON(me._ludrsWards, function (_stakesInfo) {
+        $.getJSON(me._ludrsCurrentStake, function (_stakes) {
+          console.log('_stakes');
+          console.log(_stakes);
 
-          _stakesInfo._id = stakesInfoId;
-          if (stakesInfo) {
-            _stakesInfo._rev = stakesInfo._rev;
-          }
-          stakesInfo = _stakesInfo;
+          stakesInfo = {};
+          stakesInfo._id = stakesInfoId;
+          stakesInfo._rev = stakesInfo._rev;
+          stakesInfo.stakes = _stakes;
           me.store.put(stakesInfo);
-          onResult(areaInfo, stakesInfo);
+          onMetaResult(areaInfo, stakesInfo);
         });
       });
     }
@@ -347,8 +465,9 @@
       });
     });
   };
-  // TODO getStakeInfo should accept id
-  ldsDirP.getStakeInfo = ldsDirP.getCurrentStakeInfo;
+
+  // TODO getStakeInfo should accept id (but I don't know the url)
+  ldsDirP.getStakeInfo = ldsDirP.getCurrentMeta;
 
   ldsDirP.getCurrentStakeProfiles = function (fn) {
     var me = this
@@ -364,23 +483,20 @@
         wardUnitNos.push(w.wardUnitNo);
       });
 
-      if (me._listeners.stake) {
-        me._listeners.stake(wards);
+      function gotStake(a, b, c) {
+        fn(a, b, c);
       }
-
-      me.getWards(fn, me.homeStakeWards);
+      me.getWards(gotStake, me.homeStakeWards);
     }
 
-    me.getStakeInfo(onStakeInfo);
+    onStakeInfo();
   };
 
   ldsDirP.getCurrentWardProfiles = function (fn) {
     var me = this
       ;
 
-    me.getStakeInfo(function () {
-      me.getWard(fn, me.homeWardId);
-    });
+    me.getWard(fn, me.homeWardId);
   };
   ldsDirP.clear = function () {
     var Pouch = require('Pouch');

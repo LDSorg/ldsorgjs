@@ -103,7 +103,7 @@ var global = Function("return this;")();
             ;
     
           return {
-              when: function (_fn) {
+              then: function (_fn) {
                 fn = _fn;
                 len = things.length;
                 if (complete === len) {
@@ -144,7 +144,8 @@ var global = Function("return this;")();
     , $ = require("ender")
     ;
   
-  /*jshint -W054 */
+  // Part of FuturesJS. See https://github.com/FuturesJS/forEachAsync
+    /*jshint -W054 */
     (function (exports) {
       "use strict";
     
@@ -204,7 +205,6 @@ var global = Function("return this;")();
         , Join =  require('ldsorg/join')
         , forEachAsync =  require('ldsorg/forEachAsync')
         , ldsDirP
-        , $events
         ;
     
       function getImageData(next, imgSrc) {
@@ -240,28 +240,36 @@ var global = Function("return this;")();
       }
       ldsDirP = LdsDir.prototype;
     
+      // URLs
       ldsDirP._ludrsBase = 'https://www.lds.org/directory/services/ludrs';
-      ldsDirP._ludrsStake = ldsDirP._ludrsBase + '/unit/current-user-ward-stake/';
-      ldsDirP._ludrsWards = ldsDirP._ludrsBase + '/unit/current-user-units/';
+    
+      ldsDirP._ludrsCurrentStake = ldsDirP._ludrsBase + '/unit/current-user-units/';
+      ldsDirP._ludrsCurrentMeta = ldsDirP._ludrsBase + '/unit/current-user-ward-stake/';
+      ldsDirP._ludrsCurrentUserId = ldsDirP._ludrsBase + '/mem/current-user-id/';
+    
+      ldsDirP._ludrsMemberList = ldsDirP._ludrsBase + '/mem/member-list/';
+      ldsDirP._ludrsPhotos = ldsDirP._ludrsBase + '/mem/wardDirectory/photos/';
+    
       ldsDirP._ludrsHousehold = ldsDirP._ludrsBase + '/mem/householdProfile/';
-      ldsDirP._ludrsUserId = ldsDirP._ludrsBase + '/mem/current-user-id/';
     
       ldsDirP.init = function (cb, fns) {
-        $events = $('body');
         var me = this
           ;
     
         me.areas = null;
-        me.homeArea = null;
+        me.stakes = [];
+        me.wards = [];
+    
         me.homeAreaId = null;
+        me.homeArea = null;
+        me.homeAreaStakes = null;
     
-        me.stakes = null;
-        me.homeStake = null;
         me.homeStakeId = null;
+        me.homeStake = null;
+        me.homeStakeWards = null;
     
-        me.wards = null;
-        me.homeWard = null;
         me.homeWardId = null;
+        me.homeWard = null;
     
         me._listeners = fns || {};
     
@@ -271,28 +279,46 @@ var global = Function("return this;")();
           var Pouch = require('Pouch');
           new Pouch('wardmenu-ludrs', function (err, db) {
             me.store = db;
-            cb();
+            me.getCurrentMeta(cb);
           });
         }, 'text');
       };
     
       ldsDirP.getHousehold = function (fn, profileOrId) {
         var me = this
-          , jointProfile = profileOrId.householdId && profileOrId || {}
-          , id = profileOrId.householdId || profileOrId
-          , profileId = 'profile-' + id
+          , jointProfile
+          , id
+          , profileId
           ;
+    
+        if ('object' === typeof profileOrId) {
+          jointProfile = profileOrId;
+          id = jointProfile.householdId;
+        } else {
+          id = profileOrId;
+          jointProfile = {
+            householdId: id
+          };
+        }
+    
+        profileId = 'profile-' + id;
     
         function onResult(profile) {
           if (me._listeners.profile) {
             me._listeners.profile(profile);
+          }
+          if (me._listeners.household) {
+            me._listeners.household(profile);
           }
     
           fn(profile);
         }
     
         me.store.get(profileId, function (err, profile) {
-          var photoUrl
+          var familyPhotoUrl
+            , individualPhotoUrl
+            , familyPhotoId
+            , individualPhotoId
             ;
     
           if (profile && profile.imageData) {
@@ -302,20 +328,30 @@ var global = Function("return this;")();
     
           $.getJSON(me._ludrsHousehold + id, function (_profile) {
             function orThat(key) {
-              jointProfile[key] = jointProfile[key] || _profile[key];
+              if (jointProfile[key]) {
+                console.warn("'" + key + "' already exists, not overwriting");
+              } else {
+                jointProfile[key] = _profile[key];
+              }
             }
     
-            orThat('canViewMapLink');
-            orThat('hasEditRights');
-            orThat('headOfHousehold');
-            orThat('householdInfo');
-            orThat('id');
+            // Object.keys(household)
+            [ "canViewMapLink"
+            , "hasEditRights"
+            , "headOfHousehold"
+            , "householdInfo"
+            , "id"
+            , "inWard"
+            , "isEuMember"
+            , "otherHouseholdMembers"
+            , "spouse"
+            , "ward"
+            ].forEach(function (key) {
+              orThat(key);
+            });
+    
+            // may have been added before
             orThat('imageData');
-            orThat('inWard');
-            orThat('isEuMember');
-            orThat('otherHouseholdMembers');
-            orThat('spouse');
-            orThat('ward');
     
             function saveProfile(err, dataUrl) {
               jointProfile._id = profileId;
@@ -325,9 +361,19 @@ var global = Function("return this;")();
               onResult();
             }
     
-            photoUrl = jointProfile.headOfHousehold.photoUrl || jointProfile.householdInfo.photoUrl || jointProfile.photoUrl;
-            if (photoUrl) {
-              getImageData(saveProfile, photoUrl);
+            individualPhotoUrl = jointProfile.headOfHousehold.photoUrl;
+            individualPhotoId = jointProfile.headOfHousehold.imageId;
+            familyPhotoUrl = jointProfile.householdInfo.photoUrl;
+            familyPhotoId = jointProfile.householdInfo.imageId;
+    
+            if (!familyPhotoUrl) {
+              // this is the one from the ward photo list resource
+              familyPhotoUrl = jointProfile.photoUrl;
+            }
+    
+            // TODO save image to db separately using imageId
+            if (familyPhotoUrl || individualPhotoUrl) {
+              getImageData(saveProfile, familyPhotoUrl || individualPhotoUrl);
             } else {
               saveProfile('no photourl', null);
             }
@@ -352,33 +398,65 @@ var global = Function("return this;")();
         });
       };
     
-      ldsDirP.getWard = function (fn, wardUnitNo) {
+      // TODO optionally include fresh pics
+      // (but always include phone from photos)
+      // TODO most of this logic should be moved to getHouseholds
+      ldsDirP.getWard = function (fn, wardOrId, opts) {
+        opts = opts || {};
+    
         var me = this
           , join = Join.create()
-          , memberListId = 'member-list-' + wardUnitNo
+          , ward
+          , id
+          , memberListId
           ;
     
-        function onWardResult(memberList) {
-          if (me._listeners.memberList) {
-            me._listeners.memberList(memberList);
-          }
-    
-          me.myWardies = memberList;
-          fn(memberList);
+        if ('object' === typeof wardOrId) {
+          ward = wardOrId;
+          id = ward.wardUnitNo;
+        } else {
+          id = wardOrId;
+          ward = me.wards[id] || { wardUnitNo: id };
         }
     
-        me.store.get(memberListId, function (err, fullMemberList) {
-          if (fullMemberList) {
-            console.log('memberList', fullMemberList);
-            onWardResult(fullMemberList.memberList);
+        memberListId = id + '-ward';
+    
+        function onWardResultFinal(ward, fireEvents) {
+          if (false !== fireEvents) {
+            onWardResult(ward);
+          }
+          fn(ward);
+        }
+        function onWardResult(ward) {
+          // This event fires when memberList is updated
+          if (me._listeners.ward) {
+            me._listeners.ward(ward);
+          }
+          if (me._listeners.households) {
+            me._listeners.households(ward.households);
+          }
+        }
+    
+        me.store.get(memberListId, function (err, _ward) {
+          _ward = _ward || {};
+    
+          // The photo resource becomes invalid after 10 minutes
+          var staleness = Date.now() - _ward.updatedAt
+            , fresh = staleness < 10 * 60 * 1000
+            ;
+    
+          if (false === opts.photos || fresh) {
+            console.log('memberList', _ward);
+            onWardResultFinal(_ward);
             return;
           }
     
-          $.getJSON(me._ludrsBase + '/mem/member-list/' + wardUnitNo, join.add());
-          // https://www.lds.org/directory/services/ludrs/mem/wardDirectory/photos/228079
-          $.getJSON(me._ludrsBase + '/mem/wardDirectory/photos/' + wardUnitNo, join.add());
+          // https://www.lds.org/directory/services/ludrs/mem/member-list/:ward_unit_number
+          $.getJSON(me._ludrsMemberList + id, join.add());
+          // https://www.lds.org/directory/services/ludrs/mem/wardDirectory/photos/:ward_unit_number
+          $.getJSON(me._ludrsPhotos + id, join.add());
     
-          join.when(function (memberListArgs, photoListArgs) {
+          join.then(function (memberListArgs, photoListArgs) {
             var memberList = memberListArgs[0]
               , photoList = photoListArgs[0]
               ;
@@ -389,65 +467,176 @@ var global = Function("return this;")();
                   return;
                 }
     
-                member.householdId = photo.householdId;
+                // householdId
+                // householdPhotoName
+                // phoneNumber
+                // photoUrl
                 member.householdPhotoName = photo.householdName;
-                member.phoneNumber = photo.phoneNumber;
-                member.photoUrl = member.photoUrl || photo.photoUrl;
+                delete photo.householdName;
+                Object.keys(photo).forEach(function (key) {
+                  if (member[key]) {
+                    console.warn("member profile now includes '" + key + "', not overwriting");
+                  } else {
+                    member[key] = photo[key];
+                  }
+                });
               });
             });
     
-            fullMemberList = { _id: memberListId, _rev: (fullMemberList||{})._rev, memberList: memberList };
-            me.store.put(fullMemberList);
-            onWardResult(fullMemberList.memberList);
+            // TODO ward.households = memberList;
+            ward.households = memberList;
+            ward.updatedAt = Date.now();
+            ward._rev = (_ward||{})._rev;
+            ward._id = ward.wardUnitNo;
+    
+            // store before getting all the thingcs
+            // TODO full restore with all the things
+            me.store.put(ward);
+    
+            function getAllHouseholds() {
+              var households = []
+                ;
+    
+              function getOneHousehold(next, household) {
+                households.push(household);
+                me.getHousehold(next, household);
+              }
+    
+              function gotAllHouseholds() {
+                // this is a merger, so no info is lost
+                ward.households = households;
+                onWardResultFinal(ward, false);
+              }
+    
+              forEachAsync(ward.households, getOneHousehold).then(gotAllHouseholds);
+            }
+    
+            // a fullHousehold is the only way to get the individual photo
+            // go figure
+            if (opts.fullHouseholds) {
+              onWardResult(ward);
+              getAllHouseholds();
+            } else {
+              onWardResultFinal(ward);
+            }
           });
         });
       };
     
-      ldsDirP.getWards = function (fn, wardUnitNos) {
+      ldsDirP.getCurrentStake = function (fn, opts) {
         var me = this
-          , profileIds = []
           ;
     
-        function pushMemberIds(next, wardUnitNo) {
-          me.getWard(function (members) {
-            members.forEach(function (m) {
-              profileIds.push(m.headOfHouseIndividualId);
-            });
-            next();
-          }, wardUnitNo);
+        me.getStake(fn, me.homeStakeId, opts);
+      };
+    
+      ldsDirP.getStake = function (fn, stakeOrId, opts) {
+        var me = this
+          , stake
+          , id
+          ;
+    
+        // TODO find resource
+        if ('object' === typeof stakeOrId) {
+          stake = stakeOrId;
+          id = stake.stakeUnitNo;
+        } else {
+          id = stakeOrId;
+          stake = me.stakes[id] || { stakeUnitNo: id };
         }
     
-        forEachAsync(wardUnitNos, pushMemberIds).then(function () {
-          // me.getHouseholds(fn, profileIds);
-          fn();
+        function gotAllWards(wards) {
+          stake.wards = wards;
+    
+          if (me._listeners.stake) {
+            me._listeners.stake(stake);
+          }
+    
+          fn(stake);
+        }
+        me.getWards(gotAllWards, stake.wards, opts);
+      };
+    
+      // wardsOrIds can be an array or map of wards or ids
+      ldsDirP.getWards = function (fn, wardsOrIds, opts) {
+        var me = this
+          , wards = []
+          ;
+    
+        function getOneWard(next, wardOrId) {
+          function addWard(ward) {
+            wards.push(ward);
+            next();
+          }
+          me.getWard(addWard, wardOrId, opts);
+        }
+    
+        if (!Array.isArray(wardsOrIds) && 'object' === typeof wardsOrIds) {
+          wardsOrIds = Object.keys(wardsOrIds).map(function (key) {
+            return wardsOrIds[key];
+          });
+        }
+        forEachAsync(wardsOrIds, getOneWard).then(function () {
+          fn(wards);
         });
       };
     
-      ldsDirP.getStakeInfo = function (fn) {
+      // Current Stake
+      ldsDirP.getCurrentMeta = function (fn) {
         var me = this
           , areaInfoId = 'area-info'
           , stakesInfoId = 'stakes-info'
           ;
     
-        function onResult(areaInfo, stakesInfo) {
-          me.homeArea = areaInfo;
-          me.homeAreaId = areaInfo.areaUnitNo;
-          me.homeStakeId = areaInfo.stakeUnitNo;
-          me.homeWardId = areaInfo.wardUnitNo;
+        function onMetaResult(currentInfo, stakesInfo) {
+          console.log(currentInfo);
+          console.log(stakesInfo);
     
-          me.stakes = stakesInfo;
-          me.homeStake = me.stakes[0];
-          me.wards = me.homeStake.wards;
-          fn();
+          me.wards = {};
+          me.stakes = {};
+    
+          me.homeArea = currentInfo;
+    
+          me.homeAreaId = currentInfo.areaUnitNo;
+          me.homeStakeId = currentInfo.stakeUnitNo;
+          me.homeWardId = currentInfo.wardUnitNo;
+    
+          me.homeArea.stakes = stakesInfo.stakes;
+          me.homeAreaStakes = {};
+          console.log('1');
+          me.homeArea.stakes.forEach(function (stake) {
+            me.homeAreaStakes[stake.stakeUnitNo] = stake;
+            me.stakes[stake.stakeUnitNo] = stake;
+          });
+    
+          me.homeStake = me.stakes[me.homeStakeId];
+          me.homeStakeWards = {};
+          console.log('2');
+          me.homeStake.wards.forEach(function (ward) {
+            me.homeStakeWards[ward.wardUnitNo] = ward;
+          });
+          console.log('3');
+          Object.keys(me.stakes).forEach(function (stakeNo, i) {
+            var stake = me.stakes[stakeNo]
+              ;
+            console.log('4', i, stake);
+            stake.wards.forEach(function (ward) {
+              me.wards[ward.wardUnitNo] = ward;
+            });
+          });
+    
+          me.homeWard = me.wards[me.homeWardId];
+    
+          fn(currentInfo);
         }
     
         function gotInfo(areaInfo, stakesInfo) {
           if (areaInfo && stakesInfo) {
-            onResult(areaInfo, stakesInfo);
+            onMetaResult(areaInfo, stakesInfo);
             return;
           }
     
-          $.getJSON(me._ludrsStake, function (_areaInfo) {
+          $.getJSON(me._ludrsCurrentMeta, function (_areaInfo) {
     
             _areaInfo._id = areaInfoId;
             if (areaInfo) {
@@ -456,15 +645,16 @@ var global = Function("return this;")();
             areaInfo = _areaInfo;
             me.store.put(areaInfo);
     
-            $.getJSON(me._ludrsWards, function (_stakesInfo) {
+            $.getJSON(me._ludrsCurrentStake, function (_stakes) {
+              console.log('_stakes');
+              console.log(_stakes);
     
-              _stakesInfo._id = stakesInfoId;
-              if (stakesInfo) {
-                _stakesInfo._rev = stakesInfo._rev;
-              }
-              stakesInfo = _stakesInfo;
+              stakesInfo = {};
+              stakesInfo._id = stakesInfoId;
+              stakesInfo._rev = stakesInfo._rev;
+              stakesInfo.stakes = _stakes;
               me.store.put(stakesInfo);
-              onResult(areaInfo, stakesInfo);
+              onMetaResult(areaInfo, stakesInfo);
             });
           });
         }
@@ -476,47 +666,42 @@ var global = Function("return this;")();
         });
       };
     
+      // TODO getStakeInfo should accept id (but I don't know the url)
+      ldsDirP.getStakeInfo = ldsDirP.getCurrentMeta;
+    
       ldsDirP.getCurrentStakeProfiles = function (fn) {
         var me = this
           ;
     
         function onStakeInfo() {
-          var wards = me.wards
+          var wards = me.homeStakeWards
             , wardUnitNos = []
             ;
-    
-          if (!$('#js-counter').length) {
-            $('body').prepend(
-              '<div style="'
-                + 'z-index: 100000; position:fixed;'
-                + 'top:40%; width:200px; height:50px;'
-                + 'right: 50%; background-color:black;'
-              + '" id="js-counter">0</div>'
-            );
-          }
     
           // TODO use underscore.pluck
           wards.forEach(function (w) {
             wardUnitNos.push(w.wardUnitNo);
           });
     
-          me.getWards(fn, me.homeStake.wards);
+          function gotStake(a, b, c) {
+            fn(a, b, c);
+          }
+          me.getWards(gotStake, me.homeStakeWards);
         }
     
-        me.getStakeInfo(onStakeInfo);
+        onStakeInfo();
       };
     
       ldsDirP.getCurrentWardProfiles = function (fn) {
         var me = this
           ;
     
-        me.getStakeInfo(function () {
-          me.getWard(fn, me.homeWardId);
-        });
+        me.getWard(fn, me.homeWardId);
       };
       ldsDirP.clear = function () {
+        var Pouch = require('Pouch');
         console.info('clearing PouchDB cache');
-        window.Pouch.destroy('wardmenu-ludrs');
+        Pouch.destroy('wardmenu-ludrs');
       };
     
       LdsDir.signin = ldsDirP.signin = function (cb) {
@@ -552,6 +737,9 @@ var global = Function("return this;")();
         }
     
         function getLoginStatus() {
+          var $events = $('body')
+            ;
+    
           $.ajax({
               //url: me._ludrsUserId
               url: 'https://www.lds.org/directory/'

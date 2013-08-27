@@ -67,16 +67,18 @@ var LdsOrg = require('ldsorg');
   - [`#init(initCompleteCallback, events)`](#ldsorginitcb-events)
     - `initCompleteCallback`
     - `events`
-  - [`#getStakeInfo(cb)`](#ldsorggetstakeinfocb)
-  - [`#getWard(unitNo, cb)`](#ldsorggetwardunitno-cb)
-    - `unitNo`
-  - [`#getWards(unitNos, cb)`](#ldsorggetwardsunitnos-cb)
-  - [`#getCurrentStakeProfiles(cb)`](#ldsorggetcurrentstakeprofilescb)
-  - [`#getCurrentWardProfiles(cb)`](#ldsorggetcurrentwardprofilescb)
-  - [`#getHousehold(profileOrId, cb)`](#ldsorggethouseholdprofileorid-cb)
+  - [`#getCurrentMeta(cb)`](#ldsorggetcurrentmetacb)
+  - [`#getCurrentStake(cb, opts)`](#ldsorggetcurrentstakecb)
+  - [`#getCurrentWard(cb, opts)`](#ldsorggetcurrentwardcb)
+  - [`#getCurrentHousehold(cb)`](#ldsorggetcurrenthouseholdcb)
+  - [`#getWard(cb, wardOrId, opts)`](#ldsorggetwardcd-ward-opts)
+    - `ward`
     - `id`
+  - [`#getWards(cb, wardsOrIds, opts)`](#ldsorggetwardscb-wards-opts)
+  - [`#getHousehold(cb, householdOrId)`](#ldsorggethouseholdcb-household)
     - `profile`
-  - [`#getHouseholds(profilesOrIds, cb)`](#ldsorggethouseholdsprofilesorids-cb)
+    - `id`
+  - [`#getHouseholds(cb, householdsOrIds)`](#ldsorggethouseholdscb-households)
   - [`#clear()`](#ldsorgclear)
 
 **Instance properties**
@@ -116,16 +118,27 @@ LdsOrg#init(cb, events)
 ---
 
 Initializes internal vars and grabs PouchDB via script tag.
+This calls `LdsOrg.getCurrentMeta()`
 
     * initCompleteCallback - fires when the library is ready to use
     * events - useful for tracking download progress, see experimental below
 
-LdsOrg#getCurrentStakeInfo(cb)
+LdsOrg#getCurrentMeta(cb)
 ---
 
 returns a combination of `/unit/current-user-ward-stake/` and `/unit/current-user-units/`
 
-LdsOrg#getWard(unitNo, cb)
+LdsOrg#getCurrentStake(cb, opts)
+---
+
+calls `getStake` and `getWards` to get the user's current stake directory
+
+LdsOrg#getCurrentWard(cb, opts)
+---
+
+calls `getStakeInfo` and `getWard` on the user's ward
+
+LdsOrg#getWard(cb, ward)
 ---
 
 returns a combination of
@@ -145,22 +158,12 @@ The following keys are included:
   * Photos\*: ["householdId", "householdName", "phoneNumber", "photoUrl"]
   * \*Note: `householdName` from Photos is renamed as `householdPhotoName`
 
-LdsOrg#getWards(unitNos, cb)
+LdsOrg#getWards(cb, wards)
 ---
 
 returns an array of the above
 
-LdsOrg#getCurrentStakeProfiles(cb)
----
-
-calls `getStakeInfo` and `getWards` to get the user's current stake directory
-
-LdsOrg#getCurrentWardProfiles(cb)
----
-
-calls `getStakeInfo` and `getWard` on the user's ward
-
-LdsOrg#getHousehold(profileOrId, cb)
+LdsOrg#getHousehold(cb, household)
 ---
 
 takes a member profile or a member id and return `/mem/householdProfile/`
@@ -180,7 +183,7 @@ The following keys are included:
   * \*Note: `householdName` from Photos is renamed as `householdPhotoName`
   * \*Note: `imageData` is the dataUrl from the household or individual `photoUrl` (this may change to `familyImageData` and `individualImageData`).
 
-LdsOrg#getHouseholds(profilesOrIds, cb)
+LdsOrg#getHouseholds(cb, households)
 ---
 
 takes an array of member profiles or ids
