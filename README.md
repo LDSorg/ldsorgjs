@@ -14,6 +14,7 @@ Install & Build
 
     git clone https://github.com/LDSorg/ldsorgjs.git
     pushd ldsorgjs
+    git checkout v2.0.0
     npm install -g pakmanager
     ./build.sh
 

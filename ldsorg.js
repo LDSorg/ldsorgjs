@@ -7,6 +7,17 @@
     , ldsDirP
     ;
 
+  function getJSON(url, cb) {
+    $.ajax({
+      url: url
+    , dataType: "json"
+    //, data: null
+    //, success: success
+    })
+      .done(function (data) { cb(null, data); })
+      .fail(function (jqXHR, textStatus, errorThrown) { cb(errorThrown, null); });
+  }
+
   function getImageData(next, imgSrc) {
     if (!imgSrc) {
       next(new Error('no imgSrc'));
@@ -127,7 +138,7 @@
         return;
       }
 
-      $.getJSON(me._ludrsHousehold + id, function (_profile) {
+      getJSON(me._ludrsHousehold + id, function (err, _profile) {
         function orThat(key) {
           if (jointProfile[key]) {
             console.warn("'" + key + "' already exists, not overwriting");
@@ -254,13 +265,13 @@
       }
 
       // https://www.lds.org/directory/services/ludrs/mem/member-list/:ward_unit_number
-      $.getJSON(me._ludrsMemberList + id, join.add());
+      getJSON(me._ludrsMemberList + id, join.add());
       // https://www.lds.org/directory/services/ludrs/mem/wardDirectory/photos/:ward_unit_number
-      $.getJSON(me._ludrsPhotos + id, join.add());
+      getJSON(me._ludrsPhotos + id, join.add());
 
       join.then(function (memberListArgs, photoListArgs) {
-        var memberList = memberListArgs[0]
-          , photoList = photoListArgs[0]
+        var memberList = memberListArgs[1]
+          , photoList = photoListArgs[1]
           ;
 
         photoList.forEach(function (photo) {
@@ -439,7 +450,7 @@
         return;
       }
 
-      $.getJSON(me._ludrsCurrentMeta, function (_areaInfo) {
+      getJSON(me._ludrsCurrentMeta, function (err, _areaInfo) {
 
         _areaInfo._id = areaInfoId;
         if (areaInfo) {
@@ -448,7 +459,7 @@
         areaInfo = _areaInfo;
         me.store.put(areaInfo);
 
-        $.getJSON(me._ludrsCurrentStake, function (_stakes) {
+        getJSON(me._ludrsCurrentStake, function (err2, _stakes) {
           console.log('_stakes');
           console.log(_stakes);
 
