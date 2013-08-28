@@ -150,7 +150,7 @@
   , "LAUREL"
   , "MIA_MAID"
   , "BEEHIVE"
-  , "ADULT"
+  , "ADULTS" // the lone plural organization
   ];
 
   ldsDirP.init = function (cb, fns) {
@@ -283,8 +283,14 @@
     });
   };
 
-  ldsDirP.getWardOrganization = function (fn, ward, organization) {
-    getJSON(LdsDir.getWardOrganizationUrl(ward.wardUnitNo, organization), function (err, data) {
+  ldsDirP.getWardOrganization = function (fn, ward, orgname, orgnameL) {
+    var me = this
+      ;
+
+    getJSON(LdsDir.getWardOrganizationUrl(ward.wardUnitNo, orgname), function (err, data) {
+      if (me._listeners.organization) {
+        me._listeners.organization(orgnameL, data);
+      }
       fn(data);
     });
   };
@@ -324,7 +330,7 @@
         data.organizationName = orgnameL;
         orgs[orgnameL] = data;
         next();
-      }, ward, orgname);
+      }, ward, orgname, orgnameL);
     }).then(done);
   };
   ldsDirP.getCurrentWardOrganizations = function (fn, organizations) {
@@ -539,6 +545,7 @@
       ;
 
     function onMetaResult(currentInfo, stakesInfo) {
+      console.log('current meta');
       console.log(currentInfo);
       console.log(stakesInfo);
 
@@ -553,7 +560,6 @@
 
       me.homeArea.stakes = stakesInfo.stakes;
       me.homeAreaStakes = {};
-      console.log('1');
       me.homeArea.stakes.forEach(function (stake) {
         me.homeAreaStakes[stake.stakeUnitNo] = stake;
         me.stakes[stake.stakeUnitNo] = stake;
@@ -561,15 +567,13 @@
 
       me.homeStake = me.stakes[me.homeStakeId];
       me.homeStakeWards = {};
-      console.log('2');
       me.homeStake.wards.forEach(function (ward) {
         me.homeStakeWards[ward.wardUnitNo] = ward;
       });
-      console.log('3');
-      Object.keys(me.stakes).forEach(function (stakeNo, i) {
+      Object.keys(me.stakes).forEach(function (stakeNo) {
         var stake = me.stakes[stakeNo]
           ;
-        console.log('4', i, stake);
+
         stake.wards.forEach(function (ward) {
           me.wards[ward.wardUnitNo] = ward;
         });
@@ -596,7 +600,7 @@
         me.store.put(areaInfo);
 
         getJSON(LdsDir.getCurrentStakeUrl(), function (err2, _stakes) {
-          console.log('_stakes');
+          console.log('meta stakes');
           console.log(_stakes);
 
           stakesInfo = {};

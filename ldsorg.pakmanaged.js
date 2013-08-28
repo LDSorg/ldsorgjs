@@ -207,6 +207,17 @@ var global = Function("return this;")();
         , ldsDirP
         ;
     
+      function getJSON(url, cb) {
+        $.ajax({
+          url: url
+        , dataType: "json"
+        //, data: null
+        //, success: success
+        })
+          .done(function (data) { cb(null, data); })
+          .fail(function (jqXHR, textStatus, errorThrown) { cb(errorThrown, null); });
+      }
+    
       function getImageData(next, imgSrc) {
         if (!imgSrc) {
           next(new Error('no imgSrc'));
@@ -238,19 +249,109 @@ var global = Function("return this;")();
     
       function LdsDir() {
       }
+      LdsDir._urls = {};
+      LdsDir._urls.base = 'https://www.lds.org/directory/services/ludrs';
+    
+      // https://www.lds.org/directory/services/ludrs/mem/householdProfile/:head_of_house_individual_id
+      LdsDir._urls.household = '/mem/householdProfile/{{household_id}}';
+      LdsDir.getHouseholdUrl = function (householdId) {
+        return (LdsDir._urls.base
+                + LdsDir._urls.household
+                    .replace(/{{household_id}}/g, householdId)
+               );
+      };
+    
+      // WARD CALLINGS
+      // https://www.lds.org/directory/services/ludrs/1.1/unit/ward-leadership-positions/:ward_unit_no/true
+      LdsDir._urls.wardLeadershipPositions = "/1.1/unit/ward-leadership-positions/{{ward_unit_no}}/true";
+      LdsDir.getWardLeadershipPositionsUrl = function (wardUnitNo) {
+        return (LdsDir._urls.base
+                + LdsDir._urls.wardLeadershipPositions
+                    .replace(/{{ward_unit_no}}/g, wardUnitNo)
+               );
+      };
+      // https://www.lds.org/directory/services/ludrs/1.1/unit/stake-leadership-group-detail/:ward_unit_no/:group_key/:instance
+      LdsDir._urls.wardLeadershipGroup = "/1.1/unit/stake-leadership-group-detail/{{ward_unit_no}}/{{group_key}}/{{instance}}";
+      LdsDir.getWardLeadershipGroupUrl = function (wardUnitNo, groupKey, instance) {
+        return (LdsDir._urls.base
+                + LdsDir._urls.wardLeadershipGroup
+                    .replace(/{{ward_unit_no}}/g, wardUnitNo)
+                    .replace(/{{group_key}}/g, groupKey)
+                    .replace(/{{instance}}/g, instance)
+               );
+      };
+      // https://www.lds.org/directory/services/ludrs/1.1/unit/roster/:ward_unit_no/:organization
+      LdsDir._urls.wardOrganization = "/1.1/unit/roster/{{ward_unit_no}}/{{organization}}";
+      LdsDir.getWardOrganizationUrl = function (wardUnitNo, organization) {
+        return (LdsDir._urls.base
+                + LdsDir._urls.wardOrganization
+                    .replace(/{{ward_unit_no}}/g, wardUnitNo)
+                    .replace(/{{organization}}/g, organization)
+               );
+      };
+    
+      // STAKE CALLINGS
+      // https://www.lds.org/directory/services/ludrs/1.1/unit/stake-leadership-positions/:stake_unit_no
+      LdsDir._urls.stakeLeadershipPositions = "/1.1/unit/stake-leadership-positions/{{stake_unit_no}}";
+      LdsDir.getStakeLeadershipPositionsUrl = function (stakeUnitNo) {
+        return (LdsDir._urls.base
+                + LdsDir._urls.stakeLeadershipPositions
+                    .replace(/{{stake_unit_no}}/g, stakeUnitNo)
+               );
+      };
+      // https://www.lds.org/directory/services/ludrs/1.1/unit/stake-leadership-group-detail/:ward_unit_no/:group_key/:instance
+      LdsDir._urls.stakeLeadershipGroup = "/1.1/unit/stake-leadership-group-detail/{{stake_unit_no}}/{{group_key}}/{{instance}}";
+      LdsDir.getStakeLeadershipGroupUrl = function (stakeUnitNo, groupKey, instance) {
+        return (LdsDir._urls.base
+                + LdsDir._urls.stakeLeadershipGroup
+                    .replace(/{{stake_unit_no}}/g, stakeUnitNo)
+                    .replace(/{{group_key}}/g, groupKey)
+                    .replace(/{{instance}}/g, instance)
+               );
+      };
+      // paste-url-here
+      LdsDir._urls.currentStake = '/unit/current-user-units/';
+      LdsDir.getCurrentStakeUrl = function () {
+        return LdsDir._urls.base + LdsDir._urls.currentStake;
+      };
+      // paste-url-here
+      LdsDir._urls.currentMeta = '/unit/current-user-ward-stake/';
+      LdsDir.getCurrentMetaUrl = function () {
+        return LdsDir._urls.base + LdsDir._urls.currentMeta;
+      };
+      // paste-url-here
+      LdsDir._urls.currentUserId = '/mem/current-user-id/';
+      LdsDir.getCurrentUserIdUrl = function () {
+        return LdsDir._urls.base + LdsDir._urls.currentUserId;
+      };
+      // https://www.lds.org/directory/services/ludrs/mem/member-list/:ward_unit_number
+      LdsDir._urls.memberList = '/mem/member-list/';
+      LdsDir.getMemberListUrl = function (wardUnitNo) {
+        return LdsDir._urls.base + LdsDir._urls.memberList + wardUnitNo;
+      };
+      // https://www.lds.org/directory/services/ludrs/mem/wardDirectory/photos/:ward_unit_number
+      LdsDir._urls.photos = '/mem/wardDirectory/photos/';
+      LdsDir.getPhotosUrl = function (wardUnitNo) {
+        return LdsDir._urls.base + LdsDir._urls.photos + wardUnitNo;
+      };
+    
+    
+      // Prototype Stuff
       ldsDirP = LdsDir.prototype;
     
-      // URLs
-      ldsDirP._ludrsBase = 'https://www.lds.org/directory/services/ludrs';
-    
-      ldsDirP._ludrsCurrentStake = ldsDirP._ludrsBase + '/unit/current-user-units/';
-      ldsDirP._ludrsCurrentMeta = ldsDirP._ludrsBase + '/unit/current-user-ward-stake/';
-      ldsDirP._ludrsCurrentUserId = ldsDirP._ludrsBase + '/mem/current-user-id/';
-    
-      ldsDirP._ludrsMemberList = ldsDirP._ludrsBase + '/mem/member-list/';
-      ldsDirP._ludrsPhotos = ldsDirP._ludrsBase + '/mem/wardDirectory/photos/';
-    
-      ldsDirP._ludrsHousehold = ldsDirP._ludrsBase + '/mem/householdProfile/';
+      // Organizations
+      ldsDirP._organizations = [
+        "HIGH_PRIEST"
+      , "ELDER"
+      , "RELIEF_SOCIETY"
+      , "PRIEST"
+      , "TEACHER"
+      , "DEACON"
+      , "LAUREL"
+      , "MIA_MAID"
+      , "BEEHIVE"
+      , "ADULTS" // the lone plural organization
+      ];
     
       ldsDirP.init = function (cb, fns) {
         var me = this
@@ -327,7 +428,7 @@ var global = Function("return this;")();
             return;
           }
     
-          $.getJSON(me._ludrsHousehold + id, function (_profile) {
+          getJSON(LdsDir.getHouseholdUrl(id), function (err, _profile) {
             function orThat(key) {
               if (jointProfile[key]) {
                 console.warn("'" + key + "' already exists, not overwriting");
@@ -380,6 +481,60 @@ var global = Function("return this;")();
             }
           });
         });
+      };
+    
+      ldsDirP.getWardOrganization = function (fn, ward, orgname, orgnameL) {
+        var me = this
+          ;
+    
+        getJSON(LdsDir.getWardOrganizationUrl(ward.wardUnitNo, orgname), function (err, data) {
+          if (me._listeners.organization) {
+            me._listeners.organization(orgnameL, data);
+          }
+          fn(data);
+        });
+      };
+      ldsDirP.getWardOrganizations = function (fn, wardOrId, organizations) {
+        var me = this
+          , ward
+          , id
+          , orgs = {}
+          ;
+    
+        if (!Array.isArray(organizations)) {
+          organizations = me._organizations;
+        }
+    
+        if ('object' === typeof wardOrId) {
+          ward = wardOrId;
+          id = ward.wardUnitNo;
+        } else {
+          id = wardOrId;
+          ward = me.wards[id] || { wardUnitNo: id };
+        }
+    
+        function done() {
+          //ward.organizations = orgs;
+          fn(orgs);
+        }
+    
+        forEachAsync(organizations, function (next, orgname) {
+          // UPPER_UNDERSCORE to camelCase
+          var orgnameL = orgname
+            .toLowerCase()
+            .replace(/(_[a-z])/g, function($1){
+              return $1.toUpperCase().replace('_','');
+            });
+    
+          me.getWardOrganization(function (data) {
+            data.organizationName = orgnameL;
+            orgs[orgnameL] = data;
+            next();
+          }, ward, orgname, orgnameL);
+        }).then(done);
+      };
+      ldsDirP.getCurrentWardOrganizations = function (fn, organizations) {
+        this.getWardOrganizations(fn, this.homeWard, organizations);
       };
     
       ldsDirP.getHouseholds = function (fn, profilesOrIds) {
@@ -443,7 +598,7 @@ var global = Function("return this;")();
           _ward = _ward || {};
     
           // The photo resource becomes invalid after 10 minutes
-          var staleness = Date.now() - _ward.updatedAt
+          var staleness = Date.now() - (_ward.updatedAt || 0)
             , fresh = staleness < 10 * 60 * 1000
             ;
     
@@ -453,14 +608,12 @@ var global = Function("return this;")();
             return;
           }
     
-          // https://www.lds.org/directory/services/ludrs/mem/member-list/:ward_unit_number
-          $.getJSON(me._ludrsMemberList + id, join.add());
-          // https://www.lds.org/directory/services/ludrs/mem/wardDirectory/photos/:ward_unit_number
-          $.getJSON(me._ludrsPhotos + id, join.add());
+          getJSON(LdsDir.getMemberListUrl(id), join.add());
+          getJSON(LdsDir.getPhotosUrl(id), join.add());
     
           join.then(function (memberListArgs, photoListArgs) {
-            var memberList = memberListArgs[0]
-              , photoList = photoListArgs[0]
+            var memberList = memberListArgs[1]
+              , photoList = photoListArgs[1]
               ;
     
             photoList.forEach(function (photo) {
@@ -592,6 +745,7 @@ var global = Function("return this;")();
           ;
     
         function onMetaResult(currentInfo, stakesInfo) {
+          console.log('current meta');
           console.log(currentInfo);
           console.log(stakesInfo);
     
@@ -606,7 +760,6 @@ var global = Function("return this;")();
     
           me.homeArea.stakes = stakesInfo.stakes;
           me.homeAreaStakes = {};
-          console.log('1');
           me.homeArea.stakes.forEach(function (stake) {
             me.homeAreaStakes[stake.stakeUnitNo] = stake;
             me.stakes[stake.stakeUnitNo] = stake;
@@ -614,15 +767,13 @@ var global = Function("return this;")();
     
           me.homeStake = me.stakes[me.homeStakeId];
           me.homeStakeWards = {};
-          console.log('2');
           me.homeStake.wards.forEach(function (ward) {
             me.homeStakeWards[ward.wardUnitNo] = ward;
           });
-          console.log('3');
-          Object.keys(me.stakes).forEach(function (stakeNo, i) {
+          Object.keys(me.stakes).forEach(function (stakeNo) {
             var stake = me.stakes[stakeNo]
               ;
-            console.log('4', i, stake);
+    
             stake.wards.forEach(function (ward) {
               me.wards[ward.wardUnitNo] = ward;
             });
@@ -639,7 +790,7 @@ var global = Function("return this;")();
             return;
           }
     
-          $.getJSON(me._ludrsCurrentMeta, function (_areaInfo) {
+          getJSON(LdsDir.getCurrentMetaUrl(), function (err, _areaInfo) {
     
             _areaInfo._id = areaInfoId;
             if (areaInfo) {
@@ -648,8 +799,8 @@ var global = Function("return this;")();
             areaInfo = _areaInfo;
             me.store.put(areaInfo);
     
-            $.getJSON(me._ludrsCurrentStake, function (_stakes) {
-              console.log('_stakes');
+            getJSON(LdsDir.getCurrentStakeUrl(), function (err2, _stakes) {
+              console.log('meta stakes');
               console.log(_stakes);
     
               stakesInfo = {};
