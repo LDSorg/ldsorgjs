@@ -49,19 +49,109 @@
 
   function LdsDir() {
   }
+  LdsDir._urls = {};
+  LdsDir._urls.base = 'https://www.lds.org/directory/services/ludrs';
+
+  // https://www.lds.org/directory/services/ludrs/mem/householdProfile/:head_of_house_individual_id
+  LdsDir._urls.household = '/mem/householdProfile/{{household_id}}';
+  LdsDir.getHouseholdUrl = function (householdId) {
+    return (LdsDir._urls.base
+            + LdsDir._urls.household
+                .replace(/{{household_id}}/g, householdId)
+           );
+  };
+
+  // WARD CALLINGS
+  // https://www.lds.org/directory/services/ludrs/1.1/unit/ward-leadership-positions/:ward_unit_no/true
+  LdsDir._urls.wardLeadershipPositions = "/1.1/unit/ward-leadership-positions/{{ward_unit_no}}/true";
+  LdsDir.getWardLeadershipPositionsUrl = function (wardUnitNo) {
+    return (LdsDir._urls.base
+            + LdsDir._urls.wardLeadershipPositions
+                .replace(/{{ward_unit_no}}/g, wardUnitNo)
+           );
+  };
+  // https://www.lds.org/directory/services/ludrs/1.1/unit/stake-leadership-group-detail/:ward_unit_no/:group_key/:instance
+  LdsDir._urls.wardLeadershipGroup = "/1.1/unit/stake-leadership-group-detail/{{ward_unit_no}}/{{group_key}}/{{instance}}";
+  LdsDir.getWardLeadershipGroupUrl = function (wardUnitNo, groupKey, instance) {
+    return (LdsDir._urls.base
+            + LdsDir._urls.wardLeadershipGroup
+                .replace(/{{ward_unit_no}}/g, wardUnitNo)
+                .replace(/{{group_key}}/g, groupKey)
+                .replace(/{{instance}}/g, instance)
+           );
+  };
+  // https://www.lds.org/directory/services/ludrs/1.1/unit/roster/:ward_unit_no/:organization
+  LdsDir._urls.wardOrganization = "/1.1/unit/roster/{{ward_unit_no}}/{{organization}}";
+  LdsDir.getWardOrganizationUrl = function (wardUnitNo, organization) {
+    return (LdsDir._urls.base
+            + LdsDir._urls.wardOrganization
+                .replace(/{{ward_unit_no}}/g, wardUnitNo)
+                .replace(/{{organization}}/g, organization)
+           );
+  };
+
+  // STAKE CALLINGS
+  // https://www.lds.org/directory/services/ludrs/1.1/unit/stake-leadership-positions/:stake_unit_no
+  LdsDir._urls.stakeLeadershipPositions = "/1.1/unit/stake-leadership-positions/{{stake_unit_no}}";
+  LdsDir.getStakeLeadershipPositionsUrl = function (stakeUnitNo) {
+    return (LdsDir._urls.base
+            + LdsDir._urls.stakeLeadershipPositions
+                .replace(/{{stake_unit_no}}/g, stakeUnitNo)
+           );
+  };
+  // https://www.lds.org/directory/services/ludrs/1.1/unit/stake-leadership-group-detail/:ward_unit_no/:group_key/:instance
+  LdsDir._urls.stakeLeadershipGroup = "/1.1/unit/stake-leadership-group-detail/{{stake_unit_no}}/{{group_key}}/{{instance}}";
+  LdsDir.getStakeLeadershipGroupUrl = function (stakeUnitNo, groupKey, instance) {
+    return (LdsDir._urls.base
+            + LdsDir._urls.stakeLeadershipGroup
+                .replace(/{{stake_unit_no}}/g, stakeUnitNo)
+                .replace(/{{group_key}}/g, groupKey)
+                .replace(/{{instance}}/g, instance)
+           );
+  };
+  // paste-url-here
+  LdsDir._urls.currentStake = '/unit/current-user-units/';
+  LdsDir.getCurrentStakeUrl = function () {
+    return LdsDir._urls.base + LdsDir._urls.currentStake;
+  };
+  // paste-url-here
+  LdsDir._urls.currentMeta = '/unit/current-user-ward-stake/';
+  LdsDir.getCurrentMetaUrl = function () {
+    return LdsDir._urls.base + LdsDir._urls.currentMeta;
+  };
+  // paste-url-here
+  LdsDir._urls.currentUserId = '/mem/current-user-id/';
+  LdsDir.getCurrentUserIdUrl = function () {
+    return LdsDir._urls.base + LdsDir._urls.currentUserId;
+  };
+  // https://www.lds.org/directory/services/ludrs/mem/member-list/:ward_unit_number
+  LdsDir._urls.memberList = '/mem/member-list/';
+  LdsDir.getMemberListUrl = function (wardUnitNo) {
+    return LdsDir._urls.base + LdsDir._urls.memberList + wardUnitNo;
+  };
+  // https://www.lds.org/directory/services/ludrs/mem/wardDirectory/photos/:ward_unit_number
+  LdsDir._urls.photos = '/mem/wardDirectory/photos/';
+  LdsDir.getPhotosUrl = function (wardUnitNo) {
+    return LdsDir._urls.base + LdsDir._urls.photos + wardUnitNo;
+  };
+
+
+  // Prototype Stuff
   ldsDirP = LdsDir.prototype;
 
-  // URLs
-  ldsDirP._ludrsBase = 'https://www.lds.org/directory/services/ludrs';
-
-  ldsDirP._ludrsCurrentStake = ldsDirP._ludrsBase + '/unit/current-user-units/';
-  ldsDirP._ludrsCurrentMeta = ldsDirP._ludrsBase + '/unit/current-user-ward-stake/';
-  ldsDirP._ludrsCurrentUserId = ldsDirP._ludrsBase + '/mem/current-user-id/';
-
-  ldsDirP._ludrsMemberList = ldsDirP._ludrsBase + '/mem/member-list/';
-  ldsDirP._ludrsPhotos = ldsDirP._ludrsBase + '/mem/wardDirectory/photos/';
-
-  ldsDirP._ludrsHousehold = ldsDirP._ludrsBase + '/mem/householdProfile/';
+  // Organizations
+  ldsDirP._organizations = [
+    "HIGH_PRIEST"
+  , "ELDER"
+  , "RELIEF_SOCIETY"
+  , "PRIEST"
+  , "TEACHER"
+  , "DEACON"
+  , "LAUREL"
+  , "MIA_MAID"
+  , "BEEHIVE"
+  , "ADULT"
+  ];
 
   ldsDirP.init = function (cb, fns) {
     var me = this
@@ -138,7 +228,7 @@
         return;
       }
 
-      getJSON(me._ludrsHousehold + id, function (err, _profile) {
+      getJSON(LdsDir.getHouseholdUrl(id), function (err, _profile) {
         function orThat(key) {
           if (jointProfile[key]) {
             console.warn("'" + key + "' already exists, not overwriting");
@@ -191,6 +281,54 @@
         }
       });
     });
+  };
+
+  ldsDirP.getWardOrganization = function (fn, ward, organization) {
+    getJSON(LdsDir.getWardOrganizationUrl(ward.wardUnitNo, organization), function (err, data) {
+      fn(data);
+    });
+  };
+  ldsDirP.getWardOrganizations = function (fn, wardOrId, organizations) {
+    var me = this
+      , ward
+      , id
+      , orgs = {}
+      ;
+
+    if (!Array.isArray(organizations)) {
+      organizations = me._organizations;
+    }
+
+    if ('object' === typeof wardOrId) {
+      ward = wardOrId;
+      id = ward.wardUnitNo;
+    } else {
+      id = wardOrId;
+      ward = me.wards[id] || { wardUnitNo: id };
+    }
+
+    function done() {
+      //ward.organizations = orgs;
+      fn(orgs);
+    }
+
+    forEachAsync(organizations, function (next, orgname) {
+      // UPPER_UNDERSCORE to camelCase
+      var orgnameL = orgname
+        .toLowerCase()
+        .replace(/(_[a-z])/g, function($1){
+          return $1.toUpperCase().replace('_','');
+        });
+
+      me.getWardOrganization(function (data) {
+        data.organizationName = orgnameL;
+        orgs[orgnameL] = data;
+        next();
+      }, ward, orgname);
+    }).then(done);
+  };
+  ldsDirP.getCurrentWardOrganizations = function (fn, organizations) {
+    this.getWardOrganizations(fn, this.homeWard, organizations);
   };
 
   ldsDirP.getHouseholds = function (fn, profilesOrIds) {
@@ -264,10 +402,8 @@
         return;
       }
 
-      // https://www.lds.org/directory/services/ludrs/mem/member-list/:ward_unit_number
-      getJSON(me._ludrsMemberList + id, join.add());
-      // https://www.lds.org/directory/services/ludrs/mem/wardDirectory/photos/:ward_unit_number
-      getJSON(me._ludrsPhotos + id, join.add());
+      getJSON(LdsDir.getMemberListUrl(id), join.add());
+      getJSON(LdsDir.getPhotosUrl(id), join.add());
 
       join.then(function (memberListArgs, photoListArgs) {
         var memberList = memberListArgs[1]
@@ -450,7 +586,7 @@
         return;
       }
 
-      getJSON(me._ludrsCurrentMeta, function (err, _areaInfo) {
+      getJSON(LdsDir.getCurrentMetaUrl(), function (err, _areaInfo) {
 
         _areaInfo._id = areaInfoId;
         if (areaInfo) {
@@ -459,7 +595,7 @@
         areaInfo = _areaInfo;
         me.store.put(areaInfo);
 
-        getJSON(me._ludrsCurrentStake, function (err2, _stakes) {
+        getJSON(LdsDir.getCurrentStakeUrl(), function (err2, _stakes) {
           console.log('_stakes');
           console.log(_stakes);
 

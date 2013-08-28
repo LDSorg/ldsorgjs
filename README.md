@@ -81,6 +81,9 @@ var LdsOrg = require('ldsorg');
     - `profile`
     - `id`
   - [`#getHouseholds(cb, householdsOrIds)`](#ldsorggethouseholdscb-households)
+  - [`#getWardOrganization(cb, ward, organization)`](#ldsorggetwardorganizationcb-ward-organization)
+  - [`#getWardOrganizations(cb, ward)`](#ldsorggetwardorganizationscb-ward)
+  - [`#getCurrentWardOrganizations(cb)`](#ldsorggetcurrentwardorganizationscb)
   - [`#clear()`](#ldsorgclear)
 
 **Instance properties**
@@ -164,6 +167,21 @@ LdsOrg#getWards(cb, wards)
 ---
 
 returns an array of the above
+
+LdsOrg#getWardOrganization(cb, ward, organization)
+---
+
+returns an organization (`HIGH_PRIEST`, etc)
+
+LdsOrg#getWardOrganizations(cb, ward)
+---
+
+returns all ward organizations (`ELDERS`, `MIA_MAIDS`, etc)
+
+LdsOrg#getCurrentWardOrganizations(cb)
+---
+
+returns all ward organizations (`ELDERS`, `MIA_MAIDS`, etc) for the current ward
 
 LdsOrg#getHousehold(cb, household)
 ---
