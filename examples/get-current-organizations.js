@@ -9,8 +9,8 @@
   function getStuff() {
       ldsorg.getCurrentWardOrganizations(function (_orgs) {
         orgs = _orgs;
-        console.log("All Done!", _orgs);
-      }, { fullHouseholds: true });
+        console.log("All Organizations", _orgs);
+      });
   }
 
   ldsorg.init(

@@ -205,18 +205,8 @@ var global = Function("return this;")();
         , Join =  require('ldsorg/join')
         , forEachAsync =  require('ldsorg/forEachAsync')
         , ldsDirP
+        , defaultKeepAlive = 1 * 24 * 60 * 60 * 1000
         ;
-    
-      function getJSON(url, cb) {
-        $.ajax({
-          url: url
-        , dataType: "json"
-        //, data: null
-        //, success: success
-        })
-          .done(function (data) { cb(null, data); })
-          .fail(function (jqXHR, textStatus, errorThrown) { cb(errorThrown, null); });
-      }
     
       function getImageData(next, imgSrc) {
         if (!imgSrc) {
@@ -339,6 +329,64 @@ var global = Function("return this;")();
       // Prototype Stuff
       ldsDirP = LdsDir.prototype;
     
+      // TODO abstract requests??
+      // get cb, abstractUrl, { individualId: 123456 }, { cacheable: "cache://pic/:id", contentType: 'image' }
+      // maybe use String.supplant?
+      ldsDirP._getJSON = function (url, cb, opts) {
+        opts = opts || {};
+        // cacheUrl = opts.cacheUrl
+        //    cache://members/:member_id/photo
+        //    cache://households/:head_of_household_id/photo
+        // cacheable = opts.preCache()
+        // opts.noCache
+        var me = this
+          ;
+    
+        function getCache(url) {
+          // TODO cache here by url
+          // TODO assume base
+          me.store.get(url, function (err, data) {
+            var stale = true
+              ;
+    
+            if (data) {
+              stale = (Date.now() - opts.updatedAt) < (opts.keepAlive || defaultKeepAlive);
+            }
+    
+            if (!stale) {
+              cb(null, data.result);
+            } else {
+              makeRequest();
+            }
+          });
+        }
+    
+        function putCache(url, data) {
+          me.store.put(url, { updatedAt: Date.now(), result: data });
+        }
+    
+        function makeRequest() {
+          $.ajax({
+            url: url
+          , dataType: "json"
+          //, data: null
+          //, success: success
+          })
+            .done(function (data) {
+              if (false) {
+                putCache(url, data);
+              }
+              cb(null, data);
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) { cb(errorThrown, null); });
+        }
+    
+        //getCache(url);
+        makeRequest();
+      };
+    
+    
+    
       // Organizations
       ldsDirP._organizations = [
         "HIGH_PRIEST"
@@ -428,7 +476,7 @@ var global = Function("return this;")();
             return;
           }
     
-          getJSON(LdsDir.getHouseholdUrl(id), function (err, _profile) {
+          me._getJSON(LdsDir.getHouseholdUrl(id), function (err, _profile) {
             function orThat(key) {
               if (jointProfile[key]) {
                 console.warn("'" + key + "' already exists, not overwriting");
@@ -487,7 +535,7 @@ var global = Function("return this;")();
         var me = this
           ;
     
-        getJSON(LdsDir.getWardOrganizationUrl(ward.wardUnitNo, orgname), function (err, data) {
+        me._getJSON(LdsDir.getWardOrganizationUrl(ward.wardUnitNo, orgname), function (err, data) {
           if (me._listeners.organization) {
             me._listeners.organization(orgnameL, data);
           }
@@ -513,7 +561,7 @@ var global = Function("return this;")();
           ward = me.wards[id] || { wardUnitNo: id };
         }
     
-        function done() {
+        function gotAllOrgs() {
           //ward.organizations = orgs;
           fn(orgs);
         }
@@ -531,10 +579,58 @@ var global = Function("return this;")();
             orgs[orgnameL] = data;
             next();
           }, ward, orgname, orgnameL);
-        }).then(done);
+        }).then(gotAllOrgs);
       };
       ldsDirP.getCurrentWardOrganizations = function (fn, organizations) {
         this.getWardOrganizations(fn, this.homeWard, organizations);
+      };
+    
+      ldsDirP.getWardPositions = function (fn, ward) {
+        this._getJSON(LdsDir.getWardLeadershipPositionsUrl(ward.wardUnitNo), function (err, data) {
+          fn(data);
+        });
+      };
+      ldsDirP.getWardCalling = function (fn, ward, group) {
+        var me = this
+          ;
+    
+        me._getJSON(
+          LdsDir.getWardLeadershipGroupUrl(ward.wardUnitNo, group.groupKey, group.instance)
+        , function (err, data) {
+            if (me._listeners.calling) {
+              me._listeners.calling(group.groupName, data);
+            }
+            fn(data.leaders);
+          }
+        );
+      };
+      ldsDirP.getWardCallings = function (fn, ward) {
+        var me = this
+          ;
+    
+        me.getWardPositions(function (positions) {
+          var leadership = positions.unitLeadership || positions.wardLeadership
+            , groups = []
+            ;
+    
+          console.log('debug leadership', leadership);
+    
+          function gotAllCallings() {
+            fn(groups);
+          }
+    
+          forEachAsync(leadership, function (next, group) {
+            me.getWardCalling(function (list) {
+              group.leaders = list.leaders;
+              group.unitName = list.unitName;
+              groups.push(group);
+              next();
+            }, ward, group);
+          }).then(gotAllCallings);
+        }, ward);
+      };
+      ldsDirP.getCurrentWardCallings = function (fn) {
+        this.getWardCallings(fn, this.homeWard);
       };
     
       ldsDirP.getHouseholds = function (fn, profilesOrIds) {
@@ -608,8 +704,8 @@ var global = Function("return this;")();
             return;
           }
     
-          getJSON(LdsDir.getMemberListUrl(id), join.add());
-          getJSON(LdsDir.getPhotosUrl(id), join.add());
+          me._getJSON(LdsDir.getMemberListUrl(id), join.add());
+          me._getJSON(LdsDir.getPhotosUrl(id), join.add());
     
           join.then(function (memberListArgs, photoListArgs) {
             var memberList = memberListArgs[1]
@@ -790,7 +886,7 @@ var global = Function("return this;")();
             return;
           }
     
-          getJSON(LdsDir.getCurrentMetaUrl(), function (err, _areaInfo) {
+          me._getJSON(LdsDir.getCurrentMetaUrl(), function (err, _areaInfo) {
     
             _areaInfo._id = areaInfoId;
             if (areaInfo) {
@@ -799,7 +895,7 @@ var global = Function("return this;")();
             areaInfo = _areaInfo;
             me.store.put(areaInfo);
     
-            getJSON(LdsDir.getCurrentStakeUrl(), function (err2, _stakes) {
+            me._getJSON(LdsDir.getCurrentStakeUrl(), function (err2, _stakes) {
               console.log('meta stakes');
               console.log(_stakes);
     
