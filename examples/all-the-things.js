@@ -78,10 +78,10 @@ var stake
   ldsorg.init(getStuff, {
     // db caches
     cacheInit: function () {
-      debug('cacheInit', arguments);
+      console.log('[cache] init');
     }
   , cacheReady: function () {
-      debug('cacheReady', arguments);
+      console.log('[cache] ready');
     }
     
     // All Meta Data
@@ -104,36 +104,65 @@ var stake
       numWards = stake.wards.length;
       countWards = 0;
 
-      console.log('Stake', '(' + countStakes + ' of ' + numStakes + ')');
-      console.log('  "' + stake.stakeName + '"');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' - ' + stake.stakeName
+      );
     }
   , stakeCallingsInit: function (stake) {
-      console.log('  stake callings...');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [callings]'
+      );
     }
   , stakePositionsInit: function (stake) {
-      console.log('  stake positions...');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [callings][positions]'
+      );
     }
   , stakePositions: function (stake, positions) {
       countStakePositions = 0;
       numStakePositions = positions.unitLeadership.length;
 
-      console.log('  ' + positions.unitLeadership.length);
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [callings][positions] ' + numStakePositions
+      );
     }
   , stakeLeadershipInit: function (stake, group) {
       countStakePositions += 1;
-      console.log('  ' + group.groupName + ' (' + countStakePositions + ' of ' + numStakePositions + ') ...');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [callings][leadership] ' + countStakePositions + '/' + numStakePositions
+      + ' - ' + group.groupName
+      );
     }
   , stakeLeadership: function (stake, group, leaders) {
-      console.log('    ', group.groupName, leaders.leaders.length);
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [callings][leadership] ' + countStakePositions + '/' + numStakePositions
+      + ' - ' + group.groupName + ' ' + leaders.leaders.length
+      );
     }
   , stakeCallings: function (stake, callings) {
-      console.log('  callings', callings.length);
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [callings] ' + callings.length
+      );
     }
   , stake: function (stake, group) {
-      console.log('  now has all non-ward stake data');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [wards] 0/' + stake.wards.length
+      );
     }
   , stakeEnd: function (stake) {
-      console.log('');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' - ' + stake.stakeName
+      + ' [end]'
+      );
     }
 
 
@@ -141,72 +170,131 @@ var stake
   , wardInit: function (ward) {
       countWards += 1;
 
-      console.log('  Ward', '(' + countWards + ' of ' + numWards + ')');
-      console.log('    "' + ward.wardName + '"');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' - ' + ward.wardName
+      );
     }
   , wardCallingsInit: function (ward) {
-      console.log('  callings...');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [callings]'
+      );
     }
   , wardPositionsInit: function (ward) {
-      console.log('    positions for "' + ward.wardName + '"...');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [positions]'
+      );
     }
   , wardPositions: function (ward, positions) {
       // TODO ditch the `unitLeadership` ?
       numWardPositions = positions.unitLeadership.length;
       countWardPositions = 0;
 
-      console.log('    ', positions.unitLeadership.length);
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [positions] ' + numWardPositions
+      );
     }
   , wardLeadershipInit: function (ward, group) {
       countWardPositions += 1;
 
-      console.log('    ' + group.groupName + ' (' + countWardPositions + ' of ' + numWardPositions + ') ...');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [leadership] ' + countWardPositions + '/' + numWardPositions
+      + ' - ' + group.groupName
+      );
     }
   , wardLeadership: function (ward, group, leaders) {
-      console.log('    ', group.groupName, group.positions.map(function (leader) {
-        return leader.positionName;
-
-      }), group.positions.length, leaders.leaders.length);
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [leadership] ' + countWardPositions + '/' + numWardPositions
+      + ' - ' + group.groupName + ' ' + group.positions.length + ':' + leaders.leaders.length
+      );
+      // TODO group.positions.forEach leader.positionName
     }
   , wardCallings: function (ward, callings) {
-      console.log('    [wardCallings]', callings.length);
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [callings] ' + callings.length
+      );
     }
 
   , wardOrganizationsInit: function (ward, orgnames) {
       numWardOrganizations = orgnames.length;
       countWardOrganizations = 0;
 
-      console.log('    [wardOrganizationsInit]' + orgnames);
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [organizations] ' + orgnames.length
+      );
     }
   , wardOrganizationInit: function (ward, orgname) {
       countWardOrganizations += 1;
 
+
       console.log(
-        '      [wardOrganizationInit] ' + orgname
-      + ' (' + countWardOrganizations + ' of ' + numWardOrganizations + ') ...'
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [organization] ' + countWardOrganizations + '/' + numWardOrganizations
       );
     }
   , wardOrganization: function (ward, orgname, members) {
-      console.log('      [wardOrganazition]', orgname, members.length);
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [organization] ' + countWardOrganizations + '/' + numWardOrganizations
+      + ' - ' + orgname + ' ' + members.length
+      );
     }
   , wardOrganizations: function (ward, orgs) {
-      console.log('    [wardOrganazations]', Object.keys(orgs).length);
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [organizations] ' + Object.keys(orgs).length + ' [end]'
+      );
     }
   , ward: function (ward) {
-      console.log('    now has all non-househald ward data');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [households] 0/' + ward.households
+      );
+    }
+  , wardEnd: function (ward) {
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' - ' + ward.wardName
+      + ' [end]'
+      );
     }
 
   , householdsInit: function (households) {
       numHouseholds = households.length;
       countHouseholds = 0;
 
-      console.log('    ' + households.length + ' households...');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [households] 0/' + households.length
+      );
     }
   , households: function (households) {
-      console.log('');
-    }
-  , wardEnd: function (ward) {
-      console.log('');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [households] ' + households.length
+      );
     }
 
 
@@ -214,27 +302,62 @@ var stake
   , householdInit: function (household) {
       countHouseholds += 1;
 
-      console.log('      ' + household.householdName + ' ' + countHouseholds + ' of ' + numHouseholds + '...');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [household] ' + countHouseholds + '/' + numHouseholds
+      + ' - ' + household.householdName
+      );
     }
   , household: function (household) {
-      console.log('      ' + household.coupleName);
-      //console.log(household);
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [household] ' + countHouseholds + '/' + numHouseholds
+      + ' - ' + household.coupleName
+      );
     }
   , householdPhotoInit: function (household) {
-      console.log('        family pic...');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [household] ' + countHouseholds + '/' + numHouseholds
+      + ' [fam-pic] '
+      );
     }
   , householdPhoto: function (household, dataUrl) {
-      console.log('        ' + dataUrl.length, 'bytes as dataUrl');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [household] ' + countHouseholds + '/' + numHouseholds
+      + ' [fam-pic] ' + dataUrl.length
+      );
     }
     // TODO spouse and children
-  , individualPhotoInit: function (individual) {
-      console.log('        ' + (individual.preferredName || individual.directoryName));
+  , individualPhotoInit: function (household) {
+      //console.log('        ' + (household.preferredName || household.directoryName));
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [household] ' + countHouseholds + '/' + numHouseholds
+      + ' [solo-pic] '
+      );
     }
-  , individualPhoto: function (individual, dataUrl) {
-      console.log('        ' + dataUrl.length, 'bytes as dataUrl');
+  , individualPhoto: function (household, dataUrl) {
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [household] ' + countHouseholds + '/' + numHouseholds
+      + ' [solo-pic] ' + dataUrl.length
+      );
     }
   , householdEnd: function (household) {
-      console.log('');
+      console.log(
+        '[stake] ' + countStakes + '/' + numStakes
+      + ' [ward] ' + countWards + '/' + numWards
+      + ' [household] ' + countHouseholds + '/' + numHouseholds
+      + ' [end]'
+      );
     }
   });
 }());

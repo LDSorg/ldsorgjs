@@ -292,11 +292,12 @@ var global = Function("return this;")();
       , "stakeEnd"
     
       , "wardInit"
+      , "wardCallingsInit"
       , "wardPositionsInit"
       , "wardPositions"
       , "wardLeadershipInit"
       , "wardLeadership"
-      , "wardLeadershipEnd"
+      , "wardCallings"
       , "wardOrganizationsInit"
       , "wardOrganizationInit"
       , "wardOrganization"
@@ -557,11 +558,13 @@ var global = Function("return this;")();
           , "inWard"
           , "isEuMember"
           , "otherHouseholdMembers"
-          , "spouse"
+          //, "spouse"
           , "ward"
           ].forEach(function (key) {
             orThat(key);
           });
+    
+          jointProfile.householdSpouse = _profile.spouse;
     
           me._emit('household', jointProfile);
     
