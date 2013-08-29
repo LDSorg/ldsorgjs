@@ -585,6 +585,7 @@ var global = Function("return this;")();
         this.getWardOrganizations(fn, this.homeWard, organizations);
       };
     
+      // WARD CALLINGS
       ldsDirP.getWardPositions = function (fn, ward) {
         this._getJSON(LdsDir.getWardLeadershipPositionsUrl(ward.wardUnitNo), function (err, data) {
           fn(data);
@@ -600,7 +601,7 @@ var global = Function("return this;")();
             if (me._listeners.calling) {
               me._listeners.calling(group.groupName, data);
             }
-            fn(data.leaders);
+            fn(data);
           }
         );
       };
@@ -612,8 +613,6 @@ var global = Function("return this;")();
           var leadership = positions.unitLeadership || positions.wardLeadership
             , groups = []
             ;
-    
-          console.log('debug leadership', leadership);
     
           function gotAllCallings() {
             fn(groups);
@@ -633,6 +632,54 @@ var global = Function("return this;")();
         this.getWardCallings(fn, this.homeWard);
       };
     
+      // STAKE CALLINGS
+      ldsDirP.getStakePositions = function (fn, stake) {
+        this._getJSON(LdsDir.getStakeLeadershipPositionsUrl(stake.stakeUnitNo), function (err, data) {
+          fn(data);
+        });
+      };
+      ldsDirP.getStakeCalling = function (fn, stake, group) {
+        var me = this
+          ;
+    
+        me._getJSON(
+          LdsDir.getStakeLeadershipGroupUrl(stake.stakeUnitNo, group.groupKey, group.instance)
+        , function (err, data) {
+            if (me._listeners.calling) {
+              me._listeners.calling(group.groupName, data);
+            }
+            fn(data);
+          }
+        );
+      };
+      ldsDirP.getStakeCallings = function (fn, stake) {
+        var me = this
+          ;
+    
+        me.getStakePositions(function (positions) {
+          var leadership = positions.unitLeadership || positions.stakeLeadership
+            , groups = []
+            ;
+    
+          function gotAllCallings() {
+            fn(groups);
+          }
+    
+          forEachAsync(leadership, function (next, group) {
+            me.getStakeCalling(function (list) {
+              group.leaders = list.leaders;
+              group.unitName = list.unitName;
+              groups.push(group);
+              next();
+            }, stake, group);
+          }).then(gotAllCallings);
+        }, stake);
+      };
+      ldsDirP.getCurrentStakeCallings = function (fn) {
+        this.getStakeCallings(fn, this.homeStake);
+      };
+    
+      // Household
       ldsDirP.getHouseholds = function (fn, profilesOrIds) {
         var me = this
           , membersInfo = []
