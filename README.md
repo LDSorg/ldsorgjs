@@ -14,7 +14,7 @@ Install & Build
 
     git clone https://github.com/LDSorg/ldsorgjs.git
     pushd ldsorgjs
-    git checkout v2.0.0
+    npm install
     npm install -g pakmanager
     ./build.sh
 
@@ -47,8 +47,8 @@ The easiest way to play with ldsorgjs is to
           });
         }
 
-        events.profile = function () {
-          console.log('Downloaded a complete profile');
+        events.household = function (household) {
+          console.log('Downloaded a household', household);
         };
 
         ldsOrg.init(initCompleteCb, events);
@@ -60,67 +60,138 @@ API
 var LdsOrg = require('ldsorg');
 ```
 
-**Class Methods**
+Note that the **convenience properties** are **updated** as the various methods are called.
+
+Create, Init, Clear
+---
+
+Methods
 
   - [`LdsOrg.create()`](#ldsorgcreate)
-
-**Instance Methods**
-
   - [`#init(initCompleteCallback, events)`](#ldsorginitcb-events)
+    - [`#getCurrentMeta(cb)`](#ldsorggetcurrentmetacb)
     - `initCompleteCallback`
     - `events`
-  - [`#getCurrentMeta(cb)`](#ldsorggetcurrentmetacb)
-  - [`#getCurrentStake(cb, opts)`](#ldsorggetcurrentstakecb)
-  - [`#getCurrentWard(cb, opts)`](#ldsorggetcurrentwardcb)
-  - [`#getCurrentHousehold(cb)`](#ldsorggetcurrenthouseholdcb)
-  - [`#getWard(cb, wardOrId, opts)`](#ldsorggetwardcd-ward-opts)
-    - `ward`
-    - `id`
-  - [`#getWards(cb, wardsOrIds, opts)`](#ldsorggetwardscb-wards-opts)
-  - [`#getHousehold(cb, householdOrId)`](#ldsorggethouseholdcb-household)
-    - `profile`
-    - `id`
-  - [`#getHouseholds(cb, householdsOrIds)`](#ldsorggethouseholdscb-households)
-  - [`#getWardOrganization(cb, ward, organization)`](#ldsorggetwardorganizationcb-ward-organization)
-  - [`#getWardOrganizations(cb, ward)`](#ldsorggetwardorganizationscb-ward)
-  - [`#getCurrentWardOrganizations(cb)`](#ldsorggetcurrentwardorganizationscb)
   - [`#clear()`](#ldsorgclear)
 
-**Instance properties**
+Events
 
-As the various methods above return successfully,
-the in-memory cache of the various organization units is updated.
+  - `cacheInit` fires on `init`
+  - `cacheReady` fires when `PouchDB` is ready
+  - `meta` fires when `init` finishes fetching the user metadata
 
-All the things
+Area & Stake
+---
+
+Methods
+
+  - [`#getStake(cb, stake, opts)`](#ldsorggetstakecb-stake)
+    - [`#getStakeCallings(cb, stake, opts)`](#ldsorggetstakecallingscb-stake)
+      - [`#getStakePositions(cb, stake, opts)`](#ldsorggetstakepositionscb-stake)
+      - [`#getStakeLeadership(cb, stake, group, opts)`](#ldsorggetstakeleadershipcb-stake-group)
+  - [`#getWards(cb, wards, opts)`](#ldsorggetwardscb-wards-opts)
+
+Events
+
+  - `stakeInit` fires when `getStake` is called
+    - `stakeCallingsInit` fires when `getStakeCallings` is called
+      - `stakePositionsInit` fires just before stake positions are downloaded
+        - `stakePositions` fires once stake positions are downloaded
+      - `stakeLeadershipInit` fires before each leadership group is downloaded
+        - `stakeLeadership` fires after each leadership group is downloaded
+      - `stakeCallings` fires after all positions and leadership group are handled
+    - `stake` fires after all stake data is handled
+    - `stakeEnd` fires after all wards in the stake are handled
+
+Convenience Methods
+
+  - [`#getCurrentStake(cb, opts)`](#ldsorggetcurrentstakecb)
+  - [`#getCurrentStakeCallings(cb, opts)`](#ldsorggetcurrentstakecallingscb)
+
+Convenience Properties
 
   - `#areas`
   - `#stakes`
   - `#wards`
-
-Home Area
-
   - `#homeAreaId`
   - `#homeArea`
   - `#homeAreaStakes`
-
-Home Stake
-
   - `#homeStakeId`
   - `#homeStake`
   - `#homeStakeWards`
 
-Home Ward
+Wards, Callings, Organizations
+---
+
+Methods
+
+  - [`#getWard(cb, wardOrId, opts)`](#ldsorggetwardcd-ward-opts)
+    - `ward`
+    - `id`
+  - [`#getWardOrganization(cb, ward, organization)`](#ldsorggetwardorganizationcb-ward-organization)
+  - [`#getWardOrganizations(cb, ward)`](#ldsorggetwardorganizationscb-ward)
+
+Events
+
+  - `wardInit`
+    - `wardCallingsInit`
+      - `wardPositionsInit`
+        - `wardPositions`
+      - `wardLeadershipInit`
+        - `wardLeadership`
+      - `wardCallings`
+    - `wardOrganizationsInit`
+      - `wardOrganizationInit`
+        - `wardOrganization`
+      - `wardOrganizations`
+    - `householdsInit`
+      - `households`
+    - `wardEnd`
+
+Convenience Methods
+
+  - [`#getCurrentWard(cb, opts)`](#ldsorggetcurrentwardcb)
+  - [`#getCurrentWardCallings(cb, opts)`](#ldsorggetcurrentwardcallingscb)
+  - [`#getCurrentWardOrganizations(cb, opts)`](#ldsorggetcurrentwardorganizationscb)
+
+Convenience Properties
 
   - `#homeWardId`
   - `#homeWard` 
 
-LdsOrg.create()
+
+Households, Photos, Head, Spouse, Children
 ---
+
+Methods
+
+  - [`#getHousehold(cb, household)`](#ldsorggethouseholdcb-household)
+    - `household`
+    - `id`
+  - [`#getHouseholds(cb, households)`](#ldsorggethouseholdscb-households)
+
+Convenience Methods
+
+  - [`#getCurrentHousehold(cb)`](#ldsorggetcurrenthouseholdcb)
+
+Events
+
+  - `householdInit`
+    - `household`
+      - `householdPhotoInit`
+        - `householdPhoto`
+      - `individualPhotoInit`
+        - `individualPhoto`
+    - `householdEnd`
+
+Details
+---
+
+### LdsOrg.create()
 
 Creates and returns a new `ldsorg` object.
 
-LdsOrg#init(cb, events)
----
+### LdsOrg#init(cb, events)
 
 Initializes internal vars and grabs PouchDB via script tag.
 This calls `LdsOrg.getCurrentMeta()`
@@ -128,23 +199,19 @@ This calls `LdsOrg.getCurrentMeta()`
     * initCompleteCallback - fires when the library is ready to use
     * events - useful for tracking download progress, see experimental below
 
-LdsOrg#getCurrentMeta(cb)
----
+### LdsOrg#getCurrentMeta(cb)
 
 returns a combination of `/unit/current-user-ward-stake/` and `/unit/current-user-units/`
 
-LdsOrg#getCurrentStake(cb, opts)
----
+### LdsOrg#getCurrentStake(cb, opts)
 
 calls `getStake` and `getWards` to get the user's current stake directory
 
-LdsOrg#getCurrentWard(cb, opts)
----
+### LdsOrg#getCurrentWard(cb, opts)
 
 calls `getCurrentMeta` and `getWard` on the user's ward
 
-LdsOrg#getWard(cb, ward)
----
+### LdsOrg#getWard(cb, ward)
 
 returns a combination of
 [`/mem/member-list/:ward_unit_no`](https://github.com/LDSorg/lds.org-api-documentation/blob/master/README.md#ward)
@@ -163,28 +230,23 @@ The following keys are included:
   * Photos\*: ["householdId", "householdName", "phoneNumber", "photoUrl"]
   * \*Note: `householdName` from Photos is renamed as `householdPhotoName`
 
-LdsOrg#getWards(cb, wards)
----
+### LdsOrg#getWards(cb, wards)
 
 returns an array of the above
 
-LdsOrg#getWardOrganization(cb, ward, organization)
----
+### LdsOrg#getWardOrganization(cb, ward, organization)
 
 returns an organization (`HIGH_PRIEST`, etc)
 
-LdsOrg#getWardOrganizations(cb, ward)
----
+### LdsOrg#getWardOrganizations(cb, ward)
 
 returns all ward organizations (`ELDERS`, `MIA_MAIDS`, etc)
 
-LdsOrg#getCurrentWardOrganizations(cb)
----
+### LdsOrg#getCurrentWardOrganizations(cb)
 
 returns all ward organizations (`ELDERS`, `MIA_MAIDS`, etc) for the current ward
 
-LdsOrg#getHousehold(cb, household)
----
+### LdsOrg#getHousehold(cb, household)
 
 takes a member profile or a member id and return `/mem/householdProfile/`
 
@@ -203,13 +265,11 @@ The following keys are included:
   * \*Note: `householdName` from Photos is renamed as `householdPhotoName`
   * \*Note: `imageData` is the dataUrl from the household or individual `photoUrl` (this may change to `familyImageData` and `individualImageData`).
 
-LdsOrg#getHouseholds(cb, households)
----
+### LdsOrg#getHouseholds(cb, households)
 
 takes an array of member profiles or ids
 
-LdsOrg#clear()
----
+### LdsOrg#clear()
 
 clears the PouchDB cache
 
@@ -237,6 +297,7 @@ todo
   * flatten and normalize an entire stake
   * export to json
   * export to yaml via jsontoyaml.com
+  * `window.open('data:application/json;charset=utf-8,' + encodeURIComponent(str));`
 
 Other notes
 ---

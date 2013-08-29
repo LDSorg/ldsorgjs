@@ -92,11 +92,12 @@
   , "stakeEnd"
 
   , "wardInit"
+  , "wardCallingsInit"
   , "wardPositionsInit"
   , "wardPositions"
   , "wardLeadershipInit"
   , "wardLeadership"
-  , "wardLeadershipEnd"
+  , "wardCallings"
   , "wardOrganizationsInit"
   , "wardOrganizationInit"
   , "wardOrganization"
