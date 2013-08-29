@@ -400,7 +400,7 @@
         me._emit('householdPhotoInit', jointProfile);
         me.store.get(familyImageId, function (err, data) {
           data = data || {};
-          if (data.result) {
+          if ('string' === typeof data.result) {
             saveHouseholdPhoto(data.result);
             return;
           }
@@ -420,7 +420,7 @@
         me._emit('individualPhotoInit', jointProfile);
         me.store.get(individualImageId, function (err, data) {
           data = data || {};
-          if (data.result) {
+          if ('string' === typeof data.result) {
             saveIndividualPhoto(data.result);
             return;
           }

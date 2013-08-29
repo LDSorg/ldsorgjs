@@ -34,7 +34,7 @@
           stake = _stake;
           console.log("All Done!");
         }
-      , { fullHouseholds: false
+      , { //fullHouseholds: false
         //, wards: false
         }
       );
