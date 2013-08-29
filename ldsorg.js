@@ -406,7 +406,7 @@
           }
           getImageData(function (err, dataUrl) {
             data._id = familyImageId;
-            data.result = dataUrl;
+            data.result = dataUrl || "";
             me.store.put(data);
             saveHouseholdPhoto(dataUrl);
           }, familyPhotoUrl);
@@ -426,7 +426,7 @@
           }
           getImageData(function (err, dataUrl) {
             data._id = individualImageId;
-            data.result = dataUrl;
+            data.result = dataUrl || "";
             me.store.put(data);
             saveIndividualPhoto(dataUrl);
           }, individualPhotoUrl);
