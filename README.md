@@ -60,6 +60,15 @@ API
 var LdsOrg = require('ldsorg');
 ```
 
+There's a lot of stuff, so I've separated it out into a few main categories:
+
+  - [Create, Init, Clear](#create-init-clear)
+  - [Area & Stake](https://github.com/LDSorg/ldsorgjs/tree/wip#area--stake)
+  - [Wards & Households](#wards--households)
+  - [Members & Photos](#wards--households)
+  - [Experimental Stuff](#experimental-stuff)
+  - [Other Notes](#other-notes)
+
 Note that the **convenience properties** are **updated** as the various methods are called.
 
 Create, Init, Clear
@@ -120,7 +129,7 @@ Convenience Properties
   - `#homeStake`
   - `#homeStakeWards`
 
-Wards, Callings, Organizations
+Wards & Households
 ---
 
 Methods
@@ -160,7 +169,7 @@ Convenience Properties
   - `#homeWard` 
 
 
-Households, Photos, Head, Spouse, Children
+Members & Photos
 ---
 
 Methods
