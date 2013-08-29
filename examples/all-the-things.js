@@ -267,7 +267,7 @@ var stake
       console.log(
         '[stake] ' + countStakes + '/' + numStakes
       + ' [ward] ' + countWards + '/' + numWards
-      + ' [households] 0/' + ward.households
+      + ' [households] 0/' + ward.households.length
       );
     }
   , wardEnd: function (ward) {
