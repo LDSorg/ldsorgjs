@@ -137,6 +137,9 @@ Methods
   - [`#getWard(cb, wardOrId, opts)`](#ldsorggetwardcd-ward-opts)
     - `ward`
     - `id`
+  - [`#getWardCallings(cb, ward)`](#ldsorggetwardcallingscb-ward)
+    - [`#getWardPositions(cb, ward)`](#ldsorggetwardpositionscb-ward)
+    - [`#getWardLeadership(cb, ward)`](#ldsorggetwardleadershipcb-ward)
   - [`#getWardOrganization(cb, ward, organization)`](#ldsorggetwardorganizationcb-ward-organization)
   - [`#getWardOrganizations(cb, ward)`](#ldsorggetwardorganizationscb-ward)
 
