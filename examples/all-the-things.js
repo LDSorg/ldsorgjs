@@ -1,5 +1,6 @@
 /*jshint unused: false*/
 var stake
+  , stakeJson
   ;
 (function () {
   'use strict';
@@ -20,16 +21,54 @@ var stake
     , countHouseholds
     ;
 
+  function upload(id) {
+    var form = new FormData()
+      ;
+
+    form.append(id, stakeJson);
+
+    jQuery.ajax({
+      url: "http://dropsha.re/files"
+    , type: "POST"
+    , data: form
+    , cache: false
+    , contentType: false
+    , processData: false
+    , success: function (response) {
+        console.log(response);
+      }
+    });
+  }
+
+  function preUpload() {
+    stakeJson = JSON.stringify(stake);
+
+    jQuery.ajax({
+      url: "http://dropsha.re/meta"
+    , type: "POST"
+    , contentType: "application/json"
+    , data: JSON.stringify([{
+        name: "sf-lds-org.json"
+      , type: "application/json"
+      , size: stake.length
+      }])
+    , success: function (response) {
+        console.log(response);
+        upload(response[0]);
+      }
+    });
+  }
+
   function getStuff() {
-      ldsorg.getCurrentStake(
-        function (_stake) {
-          stake = _stake;
-          console.log("All Done!");
-        }
-      , { //fullHouseholds: false
-        //, wards: false
-        }
-      );
+    ldsorg.getCurrentStake(
+      function (_stake) {
+        stake = _stake;
+        console.log("All Done!");
+      }
+    , { //fullHouseholds: false
+      //, wards: false
+      }
+    );
   }
 
   //TODO

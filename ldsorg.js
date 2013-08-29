@@ -401,14 +401,15 @@
         me.store.get(familyImageId, function (err, data) {
           data = data || {};
           if ('string' === typeof data.result) {
-            saveHouseholdPhoto(data.result);
+            saveHouseholdPhoto(err, data.result);
             return;
           }
           getImageData(function (err, dataUrl) {
             data._id = familyImageId;
             data.result = dataUrl || "";
             me.store.put(data);
-            saveHouseholdPhoto(dataUrl);
+
+            saveHouseholdPhoto(err, dataUrl);
           }, familyPhotoUrl);
         });
       }
@@ -421,14 +422,14 @@
         me.store.get(individualImageId, function (err, data) {
           data = data || {};
           if ('string' === typeof data.result) {
-            saveIndividualPhoto(data.result);
+            saveIndividualPhoto(err, data.result);
             return;
           }
           getImageData(function (err, dataUrl) {
             data._id = individualImageId;
             data.result = dataUrl || "";
             me.store.put(data);
-            saveIndividualPhoto(dataUrl);
+            saveIndividualPhoto(err, dataUrl);
           }, individualPhotoUrl);
         });
       }
