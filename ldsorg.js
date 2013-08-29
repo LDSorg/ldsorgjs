@@ -404,7 +404,7 @@
             saveHouseholdPhoto(data.result);
             return;
           }
-          getImageData(function (dataUrl) {
+          getImageData(function (err, dataUrl) {
             data._id = familyImageId;
             data.result = dataUrl;
             me.store.put(data);
@@ -424,7 +424,7 @@
             saveIndividualPhoto(data.result);
             return;
           }
-          getImageData(function (dataUrl) {
+          getImageData(function (err, dataUrl) {
             data._id = individualImageId;
             data.result = dataUrl;
             me.store.put(data);

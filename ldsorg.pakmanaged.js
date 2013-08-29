@@ -604,7 +604,7 @@ var global = Function("return this;")();
                 saveHouseholdPhoto(data.result);
                 return;
               }
-              getImageData(function (dataUrl) {
+              getImageData(function (err, dataUrl) {
                 data._id = familyImageId;
                 data.result = dataUrl;
                 me.store.put(data);
@@ -624,7 +624,7 @@ var global = Function("return this;")();
                 saveIndividualPhoto(data.result);
                 return;
               }
-              getImageData(function (dataUrl) {
+              getImageData(function (err, dataUrl) {
                 data._id = individualImageId;
                 data.result = dataUrl;
                 me.store.put(data);
