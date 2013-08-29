@@ -457,7 +457,7 @@
       ;
 
     if (!Array.isArray(orgnames)) {
-      orgnames = me._organizations;
+      orgnames = me._organizations.slice(0);
     }
 
     ward = LdsDir.mapId(wardOrId, 'wardUnitNo');
@@ -522,7 +522,7 @@
         , groups = []
         ;
 
-      function gotAllCallings() {
+      function gotAllWardCallings() {
         me._emit('wardCallings', ward, groups);
         fn(groups);
       }
@@ -534,7 +534,7 @@
           groups.push(group);
           next();
         }, ward, group);
-      }).then(gotAllCallings);
+      }).then(gotAllWardCallings);
     }, ward);
   };
   ldsDirP.getCurrentWardCallings = function (fn) {
@@ -575,7 +575,7 @@
         , groups = []
         ;
 
-      function gotAllCallings() {
+      function gotAllStakeCallings() {
         me._emit('stakeCallings', stake, groups);
         fn(groups);
       }
@@ -587,7 +587,7 @@
           groups.push(group);
           next();
         }, stake, group);
-      }).then(gotAllCallings);
+      }).then(gotAllStakeCallings);
     }, stake);
   };
   ldsDirP.getCurrentStakeCallings = function (fn) {
@@ -705,6 +705,7 @@
   };
 
   ldsDirP.getStake = function (fn, stakeOrId, opts) {
+    opts = opts || {};
     var me = this
       , stake
       , id
@@ -720,7 +721,7 @@
     me._emit('stakeInit', stake);
 
     function gotAllWards(wards) {
-      stake.wards = wards;
+      stake.wards = wards || stake.wards;
 
       me._emit('stakeEnd', stake);
       fn(stake);
@@ -730,8 +731,12 @@
       stake.callings = callings;
 
       me._emit('stake', stake);
-      me.getWards(gotAllWards, stake.wards, opts);
-    });
+      if (false === opts.wards) {
+        gotAllWards();
+      } else {
+        me.getWards(gotAllWards, stake.wards, opts);
+      }
+    }, stake);
   };
   ldsDirP.getCurrentStake = function (fn, opts) {
     var me = this

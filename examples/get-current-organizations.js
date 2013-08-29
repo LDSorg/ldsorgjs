@@ -7,14 +7,18 @@
     ;
 
   function getStuff() {
-      ldsorg.getCurrentWardOrganizations(function (_orgs) {
-        orgs = _orgs;
-        console.log("All Organizations", _orgs);
-      });
+    ldsorg.getCurrentWardOrganizations(function (_orgs) {
+      orgs = _orgs;
+      console.log("All Organizations", _orgs);
+    });
   }
 
   ldsorg.init(
     getStuff
-  , { organization: function (orgname, data) { console.log('organization', orgname, data); } }
+  , { wardOrganizationsInit: function (ward, orgnames) { console.log('orgsInit', ward, orgnames); }
+    , wardOrganizationInit: function (ward, orgname) { console.log('orgInit', orgname); }
+    , wardOrganization: function (orgname, list) { console.log('org', orgname, list); }
+    , wardOrganizations: function (ward, orgs) { console.log('orgs', ward, orgs); }
+    }
   );
 }());

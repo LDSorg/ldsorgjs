@@ -657,7 +657,7 @@ var global = Function("return this;")();
           ;
     
         if (!Array.isArray(orgnames)) {
-          orgnames = me._organizations;
+          orgnames = me._organizations.slice(0);
         }
     
         ward = LdsDir.mapId(wardOrId, 'wardUnitNo');
@@ -722,7 +722,7 @@ var global = Function("return this;")();
             , groups = []
             ;
     
-          function gotAllCallings() {
+          function gotAllWardCallings() {
             me._emit('wardCallings', ward, groups);
             fn(groups);
           }
@@ -734,7 +734,7 @@ var global = Function("return this;")();
               groups.push(group);
               next();
             }, ward, group);
-          }).then(gotAllCallings);
+          }).then(gotAllWardCallings);
         }, ward);
       };
       ldsDirP.getCurrentWardCallings = function (fn) {
@@ -775,7 +775,7 @@ var global = Function("return this;")();
             , groups = []
             ;
     
-          function gotAllCallings() {
+          function gotAllStakeCallings() {
             me._emit('stakeCallings', stake, groups);
             fn(groups);
           }
@@ -787,7 +787,7 @@ var global = Function("return this;")();
               groups.push(group);
               next();
             }, stake, group);
-          }).then(gotAllCallings);
+          }).then(gotAllStakeCallings);
         }, stake);
       };
       ldsDirP.getCurrentStakeCallings = function (fn) {
@@ -905,6 +905,7 @@ var global = Function("return this;")();
       };
     
       ldsDirP.getStake = function (fn, stakeOrId, opts) {
+        opts = opts || {};
         var me = this
           , stake
           , id
@@ -920,7 +921,7 @@ var global = Function("return this;")();
         me._emit('stakeInit', stake);
     
         function gotAllWards(wards) {
-          stake.wards = wards;
+          stake.wards = wards || stake.wards;
     
           me._emit('stakeEnd', stake);
           fn(stake);
@@ -930,8 +931,12 @@ var global = Function("return this;")();
           stake.callings = callings;
     
           me._emit('stake', stake);
-          me.getWards(gotAllWards, stake.wards, opts);
-        });
+          if (false === opts.wards) {
+            gotAllWards();
+          } else {
+            me.getWards(gotAllWards, stake.wards, opts);
+          }
+        }, stake);
       };
       ldsDirP.getCurrentStake = function (fn, opts) {
         var me = this

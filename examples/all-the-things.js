@@ -29,11 +29,20 @@
   }
 
   function getStuff() {
-      ldsorg.getCurrentWard(function (_stake) {
-        stake = _stake;
-        console.log("All Done!");
-      }, { fullHouseholds: true });
+      ldsorg.getCurrentStake(
+        function (_stake) {
+          stake = _stake;
+          console.log("All Done!");
+        }
+      , { fullHouseholds: false
+        //, wards: false
+        }
+      );
   }
+
+  //TODO
+  numStakes = 1;
+  countStakes = 0;
 
   ldsorg.init(getStuff, {
     // db caches
@@ -47,11 +56,12 @@
     // All Meta Data
   , meta: function (meta) {
       debug('meta', arguments);
-      console.log(meta);
+      console.log('[meta]', meta);
     }
+    // TODO
   , area: function (area) {
       debug('area', arguments);
-      console.log('Current User Area');
+      console.log('[area]');
       console.log(area);
 
       numStakes = area.stakes.length;
@@ -64,35 +74,38 @@
       debug('stakeInit', arguments);
       countStakes += 1;
       numWards = stake.wards.length;
+      countWards = 0;
 
       console.log('Stake', '(' + countStakes + ' of ' + numStakes + ')');
       console.log('  "' + stake.stakeName + '"');
     }
   , stakeCallingsInit: function (stake) {
       debug('stakeCallingsInit', arguments);
-      console.log('  callings...');
+      console.log('  stake callings...');
     }
   , stakePositionsInit: function (stake) {
       debug('stakePositionsInit', arguments);
-      console.log('  positions...');
+      console.log('  stake positions...');
     }
   , stakePositions: function (stake, positions) {
       debug('stakePositions', arguments);
-      numStakePositions = positions.length;
+      countStakePositions = 0;
+      numStakePositions = positions.unitLeadership.length;
 
-      console.log(positions);
+      console.log('  ' + positions.unitLeadership.length);
     }
   , stakeLeadershipInit: function (stake, group) {
       debug('stakeLeadershipInit', arguments);
+      countStakePositions += 1;
       console.log('  ' + group.groupName + ' (' + countStakePositions + ' of ' + numStakePositions + ') ...');
     }
   , stakeLeadership: function (stake, group, leaders) {
       debug('stakeLeadership', arguments);
-      console.log(leaders);
+      console.log('    ', group.groupName, leaders.leaders.length);
     }
   , stakeCallings: function (stake, callings) {
       debug('stakeCallings', arguments);
-      console.log('  callings', callings);
+      console.log('  callings', callings.length);
     }
   , stake: function (stake, group) {
       debug('stake', arguments);
@@ -124,8 +137,9 @@
       debug('wardPositions', arguments);
       // TODO ditch the `unitLeadership` ?
       numWardPositions = positions.unitLeadership.length;
+      countWardPositions = 0;
 
-      console.log('    ', positions);
+      console.log('    ', positions.unitLeadership.length);
     }
   , wardLeadershipInit: function (ward, group) {
       debug('wardLeadershipInit', arguments);
@@ -135,11 +149,14 @@
     }
   , wardLeadership: function (ward, group, leaders) {
       debug('wardLeadership', arguments);
-      console.log('    ', leaders);
+      console.log('    ', group.groupName, group.positions.map(function (leader) {
+        return leader.positionName;
+
+      }), group.positions.length, leaders.leaders.length);
     }
   , wardCallings: function (ward, callings) {
       debug('wardCallings', arguments);
-      console.log('    [wardCallings]', callings);
+      console.log('    [wardCallings]', callings.length);
     }
 
   , wardOrganizationsInit: function (ward, orgnames) {
@@ -160,11 +177,11 @@
     }
   , wardOrganization: function (ward, orgname, members) {
       debug('wardOrganization', arguments);
-      console.log('      [wardOrganazition]', orgname, members);
+      console.log('      [wardOrganazition]', orgname, members.length);
     }
   , wardOrganizations: function (ward, orgs) {
       debug('wardOrganizations', arguments);
-      console.log('    [wardOrganazations]', ward, orgs);
+      console.log('    [wardOrganazations]', Object.keys(orgs).length);
     }
   , ward: function (ward) {
       debug('ward', arguments);
