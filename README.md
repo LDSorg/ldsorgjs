@@ -35,7 +35,7 @@ The easiest way to play with ldsorgjs is to
   6. Click on the bookmarklet
   7. Open up a console and play
   
-        var ldsOrg = require('ldsorg').create
+        var ldsOrg = require('ldsorg').create()
           , events = {}
           ;
 
