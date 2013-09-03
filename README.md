@@ -291,12 +291,6 @@ experimental stuff
   * signin(cb) - (class method) doesn't always work - attempts to have the user login through a popup...
     an `iframe` with `window.postMessage` might be a better choice
     `$('#iframe_').contents().find('body').append(script)`
-  * init
-    * events
-      * households - another ward list has been downloaded (useful for keeping track of total / yet-to-download)
-      * household - a single complete profile (memberList + household + photo) has been downloaded
-      * stakes - a list of stake metadata
-      * wards - a list of ward metadata
 
 todo
 ---
