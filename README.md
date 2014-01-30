@@ -65,8 +65,9 @@ In about 25 seconds you can download all of the data (including pictures) for yo
 ;(function (exports) {
   'use strict';
 
-  var LdsOrg = exports.LdsOrg || require('./ldsorg').LdsOrg
-    , Cache = exports.LdsOrgCache || require('./cache').LdsOrgCache
+  var LdsOrg = exports.LdsOrg || require('ldsorg').LdsOrg
+      // you should probably create your own cache strategy
+    , Cache = exports.LdsOrgCache || require('ldsorg/cache').LdsOrgCache
     , ldsorg
     , ts = Date.now()
     , username
@@ -94,19 +95,18 @@ In about 25 seconds you can download all of the data (including pictures) for yo
       ldsorg.init(
         function () {
           console.log('User Meta Data Gathered', ((Date.now() - ts) / 1000).toFixed(2) + 's');
-          /*
-          ldsorg.getHouseholdWithPhotos(function (data) {
-            console.log(data);
-          }, '5754908622', {});
-          ldsorg.getCurrentUserId(function (id) {
-            console.log('got user id', id);
-          });
-          */
+
           ldsorg.getCurrentStake().getAll(function () {
-            console.log('got current stake', ((Date.now() - ts) / 1000).toFixed(2) + 's');
+            console.log(
+              'All stake-level data (not including wards) is now cached'
+            , ((Date.now() - ts) / 1000).toFixed(2) + 's'
+            );
           });
           ldsorg.getCurrentStake().getCurrentWard().getAll(function () {
-            console.log('got current ward', ((Date.now() - ts) / 1000).toFixed(2) + 's');
+            console.log(
+              'All ward-level data is now cache'
+            , ((Date.now() - ts) / 1000).toFixed(2) + 's'
+            );
           });
         }
       , function log(event/*, a, b, c, d*/) {
