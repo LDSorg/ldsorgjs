@@ -1,6 +1,6 @@
 {
   "name": "ldsorg",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Unofficial JavaScript Library for LDS.org",
   "main": "ldsorg.js",
   "scripts": {
@@ -9,6 +9,11 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/LDSorg/ldsorgjs.git"
+  },
+  "dependencies": {
+    "forEachAsync": "~3.0.0",
+    "join": "~3.0.0",
+    "lateral": "~3.0.5"
   },
   "keywords": [
     "ysa",
@@ -21,7 +26,7 @@
     "directory",
     "stake"
   ],
-  "author": "AJ ONeal <coolaj86@gmail.com> (http://coolaj86.info/)",
+  "author": "AJ ONeal <coolaj86@gmail.com> (http://coolaj86.com/)",
   "license": "Apache2",
   "bugs": {
     "url": "https://github.com/LDSorg/ldsorgjs/issues"

@@ -1,0 +1,33 @@
+{
+  "name": "ldsorg",
+  "main": "ldsorg.js",
+  "version": "2.0.0",
+  "authors": [
+    "AJ ONeal <coolaj86@gmail.com>"
+  ],
+  "description": "Unofficial LDS.org JavaScript Library for Node.js and bookmarklets",
+  "keywords": [
+    "ysa",
+    "msa",
+    "lds",
+    "lds.org",
+    "mormon",
+    "mormon.org",
+    "ward",
+    "directory",
+    "stake"
+  ],
+  "license": "Apache2",
+  "homepage": "https://github.com/LDSorg/ldsorgjs",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "join": "~3.0.0",
+    "lateral": "~3.0.5"
+  }
+}
