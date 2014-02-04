@@ -137,7 +137,8 @@ TODO list respective urls and link to examples on ldsorg-api-documentation repo
   * #getCurrentUserId(fn)
   * #getCurrentUnits(fn)
   * #getCurrentStakes(fn)
-  * #getUserMeta(fn)
+  * #getCurrentUserMeta(fn)
+  * #getCurrentHousehold(fn)
   * #getStake(stakeUnitNo) - returns an LdsStake instance
   * #getCurrentStake() - returns an LdsStake instance
 
