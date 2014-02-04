@@ -129,6 +129,7 @@
     // Ward Composite
     //
     ldsWardP.getHouseholdWithPhotos = function (fn, profileOrId, opts) {
+      opts = opts || {};
       var join = Join.create()
         , me = this
         , id

@@ -190,3 +190,8 @@ cat \
   "bower_components/ldsorgjs/cache-browser.js" \
   > ldsorg.all.js
 ```
+
+TODO
+===
+
+Be able to serialize / deserialize top-level LdsOrg object so that it can be used between sessions for APIs.

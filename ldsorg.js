@@ -306,7 +306,7 @@
     me._store = new me._Cache({ ldsOrg: me });
     me._store.init(function () {
       me._emit('cacheReady');
-      me.getUserMeta(cb);
+      me.getCurrentUserMeta(cb);
     });
   };
 
@@ -368,7 +368,7 @@
   //
   // Session Composite
   //
-  ldsOrgP.getUserMeta = function (fn) {
+  ldsOrgP.getCurrentUserMeta = function (fn) {
     var me = this
       //, areaInfoId = 'area-info'
       //, stakesInfoId = 'stakes-info'
@@ -378,11 +378,11 @@
       , stakeJ = join.add()
       ;
 
-      me.areas = {};
-      me.wards = {};
-      me.stakes = {};
+    me.areas = {};
+    me.wards = {};
+    me.stakes = {};
 
-      me.homeArea = {};
+    me.homeArea = {};
 
     me.getCurrentUserId(function (userId) {
       me.currentUserId = userId;
@@ -418,6 +418,13 @@
 
       stakeJ(null, stakes);
     });
+    ldsOrgP.getCurrentHousehold = function (fn, opts) {
+      opts = opts || {};
+      var me = this
+        ;
+
+      me.getCurrentStake().getCurrentWard().getHouseholdWithPhotos(fn, me.currentUserId, opts);
+    };
 
     join.then(function (userArgs, unitArgs, stakeArgs) {
       var meta
@@ -441,6 +448,7 @@
       fn(meta);
     });
   };
+  ldsOrgP.getUserMeta = ldsOrgP.getCurrentUserMeta;
   ldsOrgP.getStake = function (stakeUnitNo) {
     var me = this
       ;
