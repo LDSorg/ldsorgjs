@@ -56,6 +56,7 @@
       me._emit('wardMemberListInit');
       LdsOrg._getJSON(
         function (err, list) {
+          me._emit('wardMemberList', list);
           fn(list);
         }
       , { url: LdsOrg.getMemberListUrl(me._wardUnitNo)
@@ -71,6 +72,7 @@
       me._emit('wardPhotoDirectoryInit');
       LdsOrg._getJSON(
         function (err, list) {
+          me._emit('wardPhotoDirectory', list);
           fn(list);
         }
       , { url: LdsOrg.getPhotosUrl(me._wardUnitNo)
@@ -231,37 +233,21 @@
         fn(households);
       });
     };
-    ldsWardP.getAll = function (fn, opts) {
-      opts = opts || {};
-
+    ldsWardP.getRoster = function (fn, opts) {
       var me = this
         , id = me._wardUnitNo
         ;
 
-      me._emit('wardInit', id);
-      function onResult(ward) {
-        me._emit('ward', id, ward);
-        me._emit('wardEnd', id);
-        fn(ward);
-      }
-
-      function getRoster() {
-        var join = Join.create()
+      function mergeRoster() {
+        var roster = []
+          , photoMap = {}
+          , memberMap = {}
+          , join = Join.create()
           , listJ = join.add()
           , photoJ = join.add()
-          , orgsJ = join.add()
-          , callsJ = join.add()
           ;
 
         me._emit('wardRosterInit');
-
-        me.getOrganizations(function (orgs) {
-          orgsJ(null, orgs);
-        });
-
-        me.getCallings(function (callings) {
-          callsJ(null, callings);
-        });
 
         me.getMemberList(function (list) {
           listJ(null, list);
@@ -271,86 +257,117 @@
           photoJ(null, photos);
         }, id);
 
-        join.then(function (memberListArgs, photoListArgs, orgsArgs, callsArgs) {
+        join.then(function (memberListArgs, photoListArgs) {
           var memberList = memberListArgs[1]
             , photoList = photoListArgs[1]
-            , organizations = orgsArgs[1]
-            , callings = callsArgs[1]
             ;
 
-          me._emit('wardMemberList', memberList);
-          me._emit('wardPhotoDirectory', photoList);
+          photoList.forEach(function (_photo) {
+            photoMap[_photo.householdId] = _photo;
+          });
+          memberList.forEach(function (_member) {
+            memberMap[_member.headOfHouseIndividualId] = _member;
+          });
 
-          function mergeRoster() {
-            var roster = []
-              , photoMap = {}
-              , memberMap = {}
+          photoList.forEach(function (_photo) {
+            var member
+              , photo
               ;
 
-            photoList.forEach(function (_photo) {
-              photoMap[_photo.householdId] = _photo;
-            });
-            memberList.forEach(function (_member) {
-              memberMap[_member.headOfHouseIndividualId] = _member;
-            });
-            photoList.forEach(function (_photo) {
-              var member
-                , photo
-                ;
+            photo = JSON.parse(JSON.stringify(_photo));
 
-              photo = JSON.parse(JSON.stringify(_photo));
+            if (!memberMap[_photo.householdId]) {
+              roster.push(photo);
+              return;
+            }
 
-              if (!memberMap[_photo.householdId]) {
-                roster.push(photo);
-                return;
+            member = JSON.parse(JSON.stringify(memberMap[_photo.householdId]));
+
+            // householdId
+            // householdPhotoName
+            // phoneNumber
+            // photoUrl
+            member.householdPhotoName = photo.householdName;
+            delete photo.householdName;
+            Object.keys(photo).forEach(function (key) {
+              if (member[key]) {
+                console.warn("member profile now includes '" + key + "', not overwriting");
+              } else {
+                member[key] = photo[key];
               }
-
-              member = JSON.parse(JSON.stringify(memberMap[_photo.householdId]));
-
-              // householdId
-              // householdPhotoName
-              // phoneNumber
-              // photoUrl
-              member.householdPhotoName = photo.householdName;
-              delete photo.householdName;
-              Object.keys(photo).forEach(function (key) {
-                if (member[key]) {
-                  console.warn("member profile now includes '" + key + "', not overwriting");
-                } else {
-                  member[key] = photo[key];
-                }
-              });
-
-              roster.push(member);
             });
 
-            me._emit('wardRoster', roster);
+            roster.push(member);
+          });
 
-            return roster;
-          }
+          me._emit('wardRoster', roster);
 
-          function sendStuff(households) {
-            onResult({
-              ward: me._meta
-            , members: memberList
-            , photos: photoList
-            , organizations: organizations
-            , callings: callings
-            , households: households
-            });
-          }
-
-          if (false === opts.fullHouseholds) {
-            sendStuff();
-          } else {
-            me.getHouseholds(function (households) {
-              sendStuff(households);
-            }, mergeRoster(), opts);
-          }
+          return roster;
         });
       }
 
-      getRoster();
+      me.getHouseholds(fn, mergeRoster(), opts);
+    };
+    ldsWardP.getAll = function (fn, opts) {
+      opts = opts || {};
+
+      var me = this
+        , id = me._wardUnitNo
+        , join = Join.create()
+        , listJ = join.add()
+        , photoJ = join.add()
+        , orgsJ = join.add()
+        , callsJ = join.add()
+        ;
+
+      me._emit('wardInit', id);
+
+      function onResult(ward) {
+        me._emit('ward', id, ward);
+        me._emit('wardEnd', id);
+        fn(ward);
+      }
+
+      me.getOrganizations(function (orgs) {
+        orgsJ(null, orgs);
+      });
+
+      me.getCallings(function (callings) {
+        callsJ(null, callings);
+      });
+
+      me.getMemberList(function (list) {
+        listJ(null, list);
+      }, id);
+
+      me.getPhotoList(function (photos) {
+        photoJ(null, photos);
+      }, id);
+
+      join.then(function (memberListArgs, photoListArgs, orgsArgs, callsArgs) {
+        var memberList = memberListArgs[1]
+          , photoList = photoListArgs[1]
+          , organizations = orgsArgs[1]
+          , callings = callsArgs[1]
+          ;
+
+        function sendStuff(households) {
+          onResult({
+            ward: me._meta
+          , members: memberList
+          , photos: photoList
+          , organizations: organizations
+          , callings: callings
+          , households: households
+          });
+        }
+
+        if (false === opts.fullHouseholds) {
+          sendStuff();
+        } else {
+          me.getRoster(sendStuff, opts);
+        }
+      });
     };
 
     // Composite
