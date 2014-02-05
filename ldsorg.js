@@ -22,7 +22,10 @@
 
     me._Cache = opts.Cache;
     me._cacheOpts = opts.cacheOpts || {};
+    me._promises = {};
   }
+  LdsOrg.create = LdsOrg;
+
   LdsOrg.toArray = function (mapOrArr) {
     if (!Array.isArray(mapOrArr) && 'object' === typeof mapOrArr) {
       mapOrArr = Object.keys(mapOrArr).map(function (key) {
@@ -209,6 +212,7 @@
            );
   };
 
+  // TODO move lateral here
   // TODO abstract requests??
   // get cb, abstractUrl, { individualId: 123456 }, { cacheable: "cache://pic/:id", contentType: 'image' }
   // maybe use String.supplant?
@@ -233,18 +237,31 @@
 
       if (!(stale || opts.noCache || opts.expire)) {
         cb(null, data.value);
-      } else {
-        opts.ldsOrg.makeRequest(function (err, _data) {
-          if (_data) {
-            var obj = { _id: opts.cacheId, updatedAt: Date.now(), value: _data };
-            obj._rev = (_data || {})._rev;
-            if (!opts.noCache) {
-              opts.store.put(function () {}, opts.cacheId, obj);
-            }
-          }
-          cb(err, _data);
-        }, opts.url);
+        return;
       }
+
+      // poor-man's promises
+      if (opts.ldsOrg._promises[opts.cacheId]) {
+        opts.ldsOrg._promises[opts.cacheId].push(cb);
+        return;
+      } else {
+        opts.ldsOrg._promises[opts.cacheId] = [cb];
+      }
+
+      opts.ldsOrg.makeRequest(function (err, _data) {
+        if (_data) {
+          var obj = { _id: opts.cacheId, updatedAt: Date.now(), value: _data };
+          obj._rev = (_data || {})._rev;
+          if (!opts.noCache) {
+            opts.store.put(function () {}, opts.cacheId, obj);
+          }
+        }
+
+        opts.ldsOrg._promises[opts.cacheId].forEach(function (cb) {
+          cb(err, _data);
+        });
+        delete opts.ldsOrg._promises[opts.cacheId];
+      }, opts.url);
     }
 
     // TODO cache here by url
@@ -262,26 +279,37 @@
 
       if (!(stale || opts.noCache || opts.expire)) {
         cb(null, data.value);
-      } else {
-        opts.ldsOrg.getImageData(function (err, _data) {
-          if (_data) {
-            var obj = { _id: opts.cacheId, updatedAt: Date.now(), value: _data };
-            obj._rev = (_data || {})._rev;
-            if (!opts.noCache) {
-              opts.store.put(function () {}, opts.cacheId, obj);
-            }
-          }
-          cb(err, _data);
-        }, opts.url);
+        return;
       }
+
+      // poor-man's promises
+      if (opts.ldsOrg._promises[opts.cacheId]) {
+        opts.ldsOrg._promises[opts.cacheId].push(cb);
+        return;
+      } else {
+        opts.ldsOrg._promises[opts.cacheId] = [cb];
+      }
+
+      opts.ldsOrg.getImageData(function (err, _data) {
+        if (_data) {
+          var obj = { _id: opts.cacheId, updatedAt: Date.now(), value: _data };
+          obj._rev = (_data || {})._rev;
+          if (!opts.noCache) {
+            opts.store.put(function () {}, opts.cacheId, obj);
+          }
+        }
+
+        opts.ldsOrg._promises[opts.cacheId].forEach(function (cb) {
+          cb(err, _data);
+        });
+        delete opts.ldsOrg._promises[opts.cacheId];
+      }, opts.url);
     }
 
     // TODO cache here by url
     // TODO assume base
     opts.store.get(respondWithCache, opts.cacheId);
   };
-
-  LdsOrg.create = LdsOrg;
 
   // Organizations
   LdsOrg._organizations = [
