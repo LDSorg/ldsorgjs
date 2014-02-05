@@ -236,77 +236,71 @@
     ldsWardP.getRoster = function (fn, opts) {
       var me = this
         , id = me._wardUnitNo
+        , roster = []
+        , photoMap = {}
+        , memberMap = {}
+        , join = Join.create()
+        , listJ = join.add()
+        , photoJ = join.add()
         ;
 
-      function mergeRoster() {
-        var roster = []
-          , photoMap = {}
-          , memberMap = {}
-          , join = Join.create()
-          , listJ = join.add()
-          , photoJ = join.add()
+      me._emit('wardRosterInit');
+
+      me.getMemberList(function (list) {
+        listJ(null, list);
+      }, id);
+
+      me.getPhotoList(function (photos) {
+        photoJ(null, photos);
+      }, id);
+
+      join.then(function (memberListArgs, photoListArgs) {
+        var memberList = memberListArgs[1]
+          , photoList = photoListArgs[1]
           ;
 
-        me._emit('wardRosterInit');
+        photoList.forEach(function (_photo) {
+          photoMap[_photo.householdId] = _photo;
+        });
+        memberList.forEach(function (_member) {
+          memberMap[_member.headOfHouseIndividualId] = _member;
+        });
 
-        me.getMemberList(function (list) {
-          listJ(null, list);
-        }, id);
-
-        me.getPhotoList(function (photos) {
-          photoJ(null, photos);
-        }, id);
-
-        join.then(function (memberListArgs, photoListArgs) {
-          var memberList = memberListArgs[1]
-            , photoList = photoListArgs[1]
+        photoList.forEach(function (_photo) {
+          var member
+            , photo
             ;
 
-          photoList.forEach(function (_photo) {
-            photoMap[_photo.householdId] = _photo;
-          });
-          memberList.forEach(function (_member) {
-            memberMap[_member.headOfHouseIndividualId] = _member;
-          });
+          photo = JSON.parse(JSON.stringify(_photo));
 
-          photoList.forEach(function (_photo) {
-            var member
-              , photo
-              ;
+          if (!memberMap[_photo.householdId]) {
+            roster.push(photo);
+            return;
+          }
 
-            photo = JSON.parse(JSON.stringify(_photo));
+          member = JSON.parse(JSON.stringify(memberMap[_photo.householdId]));
 
-            if (!memberMap[_photo.householdId]) {
-              roster.push(photo);
-              return;
+          // householdId
+          // householdPhotoName
+          // phoneNumber
+          // photoUrl
+          member.householdPhotoName = photo.householdName;
+          delete photo.householdName;
+          Object.keys(photo).forEach(function (key) {
+            if (member[key]) {
+              console.warn("member profile now includes '" + key + "', not overwriting");
+            } else {
+              member[key] = photo[key];
             }
-
-            member = JSON.parse(JSON.stringify(memberMap[_photo.householdId]));
-
-            // householdId
-            // householdPhotoName
-            // phoneNumber
-            // photoUrl
-            member.householdPhotoName = photo.householdName;
-            delete photo.householdName;
-            Object.keys(photo).forEach(function (key) {
-              if (member[key]) {
-                console.warn("member profile now includes '" + key + "', not overwriting");
-              } else {
-                member[key] = photo[key];
-              }
-            });
-
-            roster.push(member);
           });
 
-          me._emit('wardRoster', roster);
-
-          return roster;
+          roster.push(member);
         });
-      }
 
-      me.getHouseholds(fn, mergeRoster(), opts);
+        me._emit('wardRoster', roster);
+
+        me.getHouseholds(fn, roster, opts);
+      });
     };
     ldsWardP.getAll = function (fn, opts) {
       opts = opts || {};
