@@ -5,9 +5,10 @@
   var LdsOrgStake = { init: function (LdsOrg, LdsWard) {
     function LdsStake(opts, ldsOrg) {
       var me = this
+        , cacheOpts = {}
         ;
 
-      if (!(this instanceof LdsStake)) {
+      if (!(me instanceof LdsStake)) {
         return new LdsStake(opts, ldsOrg);
       }
 
@@ -17,10 +18,13 @@
       me._meta = ldsOrg.stakes[opts.stakeUnitNo];
       me._emit = ldsOrg._emit;
 
-      me._store = new me._ldsOrg._Cache({
-        ldsOrg: ldsOrg
-      , ldsStake: me
+      Object.keys(ldsOrg._cacheOpts).forEach(function (key) {
+        cacheOpts[key] = ldsOrg._cacheOpts[key];
       });
+      cacheOpts.ldsOrg = ldsOrg;
+      cacheOpts.ldsStake = me;
+
+      me._store = me._ldsOrg._Cache.create(cacheOpts, cacheOpts);
     }
     LdsStake.create = LdsStake;
 

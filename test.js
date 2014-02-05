@@ -39,7 +39,7 @@
     });
   }
 
-  ldsorg = LdsOrg.create({ node: isNode, Cache: Cache });
+  ldsorg = LdsOrg.create({ node: isNode, Cache: Cache, cacheOpts: { cacheDir: __dirname + '/data' } });
   ldsorg.signin(
     function (err) {
       console.log('sign-in complete');

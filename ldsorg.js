@@ -2,7 +2,26 @@
 ;(function (exports) {
   'use strict';
 
-  function LdsOrg() {
+  function LdsOrg(opts) {
+    var me = this
+      ;
+
+    if (!(me instanceof LdsOrg)) {
+      return new LdsOrg(opts);
+    }
+
+    opts = opts || {};
+
+    if (opts.node) {
+      require('./node').LdsOrgNode.init(LdsOrg, ldsOrgP);
+    } else if (opts.phantom) {
+      require('./phantom').init(LdsOrg, ldsOrgP);
+    } else {
+      (exports.LdsOrgBrowser || require('./browser').LdsOrgBrowser).init(LdsOrg, ldsOrgP);
+    }
+
+    me._Cache = opts.Cache;
+    me._cacheOpts = opts.cacheOpts || {};
   }
   LdsOrg.toArray = function (mapOrArr) {
     if (!Array.isArray(mapOrArr) && 'object' === typeof mapOrArr) {
@@ -262,24 +281,7 @@
     opts.store.get(respondWithCache, opts.cacheId);
   };
 
-  LdsOrg.create = function (opts) {
-    opts = opts || {};
-
-    if (opts.node) {
-      require('./node').LdsOrgNode.init(LdsOrg, ldsOrgP);
-    } else if (opts.phantom) {
-      require('./phantom').init(LdsOrg, ldsOrgP);
-    } else {
-      (exports.LdsOrgBrowser || require('./browser').LdsOrgBrowser).init(LdsOrg, ldsOrgP);
-    }
-
-    var ldsOrg = Object.create(LdsOrg.prototype)
-      ;
-
-    ldsOrg._Cache = opts.Cache;
-    // TODO needs to be in an init function
-    return ldsOrg;
-  };
+  LdsOrg.create = LdsOrg;
 
   // Organizations
   LdsOrg._organizations = [
@@ -297,13 +299,20 @@
 
   ldsOrgP.init = function (cb, eventer) {
     var me = this
+      , cacheOpts = {}
       ;
+
+    Object.keys(me._cacheOpts).forEach(function (key) {
+      cacheOpts[key] = me._cacheOpts[key];
+    });
+    cacheOpts.ldsOrg = me;
 
     me._emit = eventer || function () {};
 
     me._emit('cacheInit');
 
-    me._store = new me._Cache({ ldsOrg: me });
+
+    me._store = me._Cache.create(cacheOpts, cacheOpts);
     me._store.init(function () {
       me._emit('cacheReady');
       me.getCurrentUserMeta(cb);

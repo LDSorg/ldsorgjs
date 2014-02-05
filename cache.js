@@ -7,13 +7,17 @@
     , cachep
     ;
 
-  function LdsOrgCache(opts) {
+  function LdsOrgCache(opts, opts2) {
     var me = this
       , store = {}
       ;
 
+    if (!(me instanceof LdsOrgCache)) {
+      return new LdsOrgCache(opts, opts2);
+    }
+
     me._opts = opts;
-    me._opts.cacheDir = me._opts.cacheDir || __dirname;
+    me._opts.cacheDir = opts2.cacheDir || __dirname;
 
     if (me._opts.ldsOrg && !me._opts.ldsStake && !me._opts.ldsWard) {
       return {
@@ -25,6 +29,7 @@
       };
     }
   }
+  LdsOrgCache.create = LdsOrgCache;
   cachep = LdsOrgCache.prototype;
 
   cachep.init = function (ready) {

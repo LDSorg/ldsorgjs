@@ -6,9 +6,10 @@
 
     function LdsWard(opts, ldsOrg, ldsStake) {
       var me = this
+        , cacheOpts = {}
         ;
 
-      if (!(this instanceof LdsWard)) {
+      if (!(me instanceof LdsWard)) {
         return new LdsWard(opts, ldsOrg, ldsStake);
       }
 
@@ -19,11 +20,14 @@
       me._meta = ldsOrg.wards[opts.wardUnitNo];
       me._emit = ldsOrg._emit;
 
-      me._store = new me._ldsOrg._Cache({
-        ldsOrg: ldsOrg
-      , ldsStake: ldsStake
-      , ldsWard: me
+      Object.keys(ldsOrg._cacheOpts).forEach(function (key) {
+        cacheOpts[key] = ldsOrg._cacheOpts[key];
       });
+      cacheOpts.ldsOrg = ldsOrg;
+      cacheOpts.ldsStake = ldsStake;
+      cacheOpts.ldsWard = me;
+
+      me._store = me._ldsOrg._Cache.create(cacheOpts, cacheOpts);
     }
     LdsWard.create = LdsWard;
 
