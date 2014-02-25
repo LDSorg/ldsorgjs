@@ -1,7 +1,7 @@
 {
   "name": "ldsorg",
   "version": "2.2.0",
-  "description": "Unofficial JavaScript Library for LDS.org",
+  "description": "A JavaScript library for accessing LDS.org with Node.js or a browser",
   "main": "ldsorg.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
