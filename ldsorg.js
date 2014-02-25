@@ -2,6 +2,9 @@
 ;(function (exports) {
   'use strict';
 
+  var forEachAsync = exports.forEachAsync || require('foreachasync').forEachAsync
+    ;
+
   function LdsOrg(opts) {
     var me = this
       ;
@@ -455,13 +458,6 @@
 
       stakeJ(null, stakes);
     });
-    ldsOrgP.getCurrentHousehold = function (fn, opts) {
-      opts = opts || {};
-      var me = this
-        ;
-
-      me.getCurrentStake().getCurrentWard().getHouseholdWithPhotos(fn, me.currentUserId, opts);
-    };
 
     join.then(function (userArgs, unitArgs, stakeArgs) {
       var meta
@@ -481,9 +477,37 @@
 
       me.homeWard = me.wards[me.homeWardId];
 
-      me._emit('meta', meta);
-      fn(meta);
+      me.getCurrentHousehold(function (household) {
+        meta.currentHousehold = household;
+
+        // Just a lookin' for ways to speed things up...
+        me.getCurrentStake().getAll(function () {
+          me.getCurrentStake().getCurrentWard().getAll(function () {
+            var stake
+              ;
+
+            stake = me.stakes[me.homeStakeId];
+            forEachAsync(stake.wards, function (next, ward) {
+              me.getCurrentStake().getWard(ward.wardUnitNo).getAll(function () {
+                next();
+              });
+            }).then(function () {
+              // ignore
+            });
+          });
+        });
+
+        me._emit('meta', meta);
+        fn(meta);
+      });
     });
+  };
+  ldsOrgP.getCurrentHousehold = function (fn, opts) {
+    opts = opts || {};
+    var me = this
+      ;
+
+    me.getCurrentStake().getCurrentWard().getHouseholdWithPhotos(fn, me.currentUserId, opts);
   };
   ldsOrgP.getUserMeta = ldsOrgP.getCurrentUserMeta;
   ldsOrgP.getStake = function (stakeUnitNo) {
