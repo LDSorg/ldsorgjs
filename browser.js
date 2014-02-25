@@ -7,7 +7,7 @@
     var $ = exports.jQuery || require('jquery')(window)
       ;
 
-    ldsDirP.signin = function (cb, auth) {
+    ldsDirP._signin = function (cb, auth) {
       // TODO POST form to iframe
       var //me = this
           signinWin
@@ -43,7 +43,8 @@
         var $events = $('body')
           ;
 
-        $.ajax({
+        $.ajax(
+          {
             //url: me._ludrsUserId
             url: 'https://www.lds.org/directory/'
           , success: function () {
@@ -62,13 +63,14 @@
                 setTimeout(getLoginStatus, 1000);
               }
             }
-        });
+          }
+        );
       }
 
       getLoginStatus();
     };
 
-    ldsDirP.makeRequest = function (cb, url) {
+    ldsDirP._makeRequest = function (cb, url) {
       $.ajax({
         url: url
       , dataType: "json"
@@ -80,7 +82,7 @@
         ;
     };
 
-    ldsDirP.getImageData = function (next, imgSrc) {
+    ldsDirP._getImageData = function (next, imgSrc) {
       if (!imgSrc) {
         next(new Error('no imgSrc'));
         return;

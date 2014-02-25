@@ -350,6 +350,31 @@
     });
   };
 
+  ldsOrgP.signin = function (cb, auth) {
+    if (/^(dumbledore|test|guest|demo|aoeu|asdf|root|admin)$/i.test(auth.username)) {
+      cb(null);
+      console.info('Welcome to Hogwarts! ;-)');
+      this._hogwarts = true;
+      return;
+    }
+
+    this._signin(cb, auth);
+  };
+  ldsOrgP.makeRequest = function (cb, url) {
+    if (this._hogwarts) {
+      this._makeRequest = (exports.Hogwarts || require('./hogwarts').Hogwarts).makeRequest;
+    }
+    this._makeRequest(cb, url);
+  };
+  ldsOrgP.getImageData = function (next, imgSrc) {
+    /*
+    if (this._hogwarts) {
+      this._getImageData = (exports.Hogwarts || require('./hogwarts').Hogwarts).getImageData;
+    }
+    */
+    this._getImageData(next, imgSrc);
+  };
+
   // Methods
   ldsOrgP.getCurrentUserId = function (fn) {
     var me = this

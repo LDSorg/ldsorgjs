@@ -7,7 +7,7 @@
     var request = require('request')
       ;
 
-    ldsDirP.signin = function (cb, auth) {
+    ldsDirP._signin = function (cb, auth) {
       var me = this
         ;
 
@@ -33,7 +33,7 @@
       });
     };
 
-    ldsDirP.makeRequest = function (cb, url) {
+    ldsDirP._makeRequest = function (cb, url) {
       var me = this
         ;
 
@@ -60,7 +60,7 @@
       });
     };
 
-    ldsDirP.getImageData = function (next, imgSrc) {
+    ldsDirP._getImageData = function (next, imgSrc) {
       var me = this
         ;
 
