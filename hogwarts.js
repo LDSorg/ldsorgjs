@@ -17,8 +17,11 @@
   things.wardUnitNo = "gryffindor";
   things.wardName = "Provo YSA 0th Griffindor Ward";
 
+  // Thoughts on fake users
+  // http://randomuser.me/
   // Star Wars
   // Lord of the Rings
+  // Star Trek
   // Harry Potter
   characters = [
     "f:Hannah Abbott",
@@ -811,7 +814,17 @@
     var leaders = groupLeaders[group.groupKey].slice(0)
       ;
 
+    // I think this is just something that I did and I'm copying myself
+    // otherwise the next link is obselete
     group.leaders = leaders;
+
+    cache['/1.1/unit/stake-leadership-group-detail/'
+      + things.stakeUnitNo + '/'
+      + group.groupKey + '/'
+        // some provo wards have two relief societies
+        // I think that's what the instance is for
+      + group.instance
+    ] = leaders;
     group.leaders.forEach(function (leader) {
       var gender = 'MALE'
         , person
@@ -861,7 +874,7 @@
         "isAllPrivate": false,
         "mapLevel": null,
         "masterLevel": null,
-        "name": "Doe, John",
+        "name": c.last + ', ' + c.first,
         "phone": c.phone,
         "phoneLevel": "STAKE",
         "photoUrl": c.photoUrl
@@ -977,14 +990,10 @@
     cb(null, cache[url]);
   };
 
-  // http://randomuser.me/
 /*
 ldsorg.js:  LdsOrg._urls.wardLeadershipPositions = "/1.1/unit/ward-leadership-positions/{{ward_unit_no}}/true";
 ldsorg.js:  LdsOrg._urls.wardLeadershipGroup = "/1.1/unit/stake-leadership-group-detail/{{ward_unit_no}}/{{group_key}}/{{instance}}";
 ldsorg.js:  LdsOrg._urls.wardOrganization = "/1.1/unit/roster/{{ward_unit_no}}/{{organization}}";
-
-ldsorg.js:  LdsOrg._urls.stakeLeadershipPositions = "/1.1/unit/stake-leadership-positions/{{stake_unit_no}}";
-ldsorg.js:  LdsOrg._urls.stakeLeadershipGroup = "/1.1/unit/stake-leadership-group-detail/{{stake_unit_no}}/{{group_key}}/{{instance}}";
 */
 
   exports.Hogwarts = Hogwarts.Hogwarts = Hogwarts;
