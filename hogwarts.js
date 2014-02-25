@@ -982,6 +982,15 @@
     );
   });
 
+  /*
+  cache["/1.1/unit/ward-leadership-positions/" + things.wardUnitNo + "/true"] = {
+  };
+  cache["/1.1/unit/stake-leadership-group-detail/" + things.wardUnitNo + '/' + group.groupKey + '/' + group.instance] = {
+  };
+  cache["/1.1/unit/roster/" + things.wardUnitNo + '/' + organizationName] = {
+  };
+  */
+
   // TODO simulate user log out
   Hogwarts.makeRequest = function (cb, url) {
     url = url.replace('https://www.lds.org/directory/services/ludrs', '');
@@ -989,12 +998,6 @@
     console.log(cache[url]);
     cb(null, cache[url]);
   };
-
-/*
-ldsorg.js:  LdsOrg._urls.wardLeadershipPositions = "/1.1/unit/ward-leadership-positions/{{ward_unit_no}}/true";
-ldsorg.js:  LdsOrg._urls.wardLeadershipGroup = "/1.1/unit/stake-leadership-group-detail/{{ward_unit_no}}/{{group_key}}/{{instance}}";
-ldsorg.js:  LdsOrg._urls.wardOrganization = "/1.1/unit/roster/{{ward_unit_no}}/{{organization}}";
-*/
 
   exports.Hogwarts = Hogwarts.Hogwarts = Hogwarts;
 
