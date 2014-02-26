@@ -69,6 +69,9 @@
 
       getLoginStatus();
     };
+    ldsDirP._signout = function (cb) {
+      $.get('https://www.lds.org/signinout/?lang=eng&signmeout').then(cb);
+    };
 
     ldsDirP._makeRequest = function (cb, url) {
       $.ajax({

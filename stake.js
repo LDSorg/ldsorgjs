@@ -124,7 +124,9 @@
     //
     // Stake
     //
-    ldsStakeP.getAll = function (fn) {
+    ldsStakeP.getAll = function (fn, opts) {
+      // TODO get pictures using the individual photos feature
+      // /photo/url/#{id_1},#{id_2},#{id_x}/individual
       var me = this
         ;
 
@@ -150,7 +152,7 @@
             next();
           }, group);
         }, nThreads).add(positions).then(gotAllCallings);
-      });
+      }, opts);
     };
 
     return LdsStake;

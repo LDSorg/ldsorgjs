@@ -36,10 +36,13 @@
     });
     ldsorg.getCurrentStake().getCurrentWard().getAll(function () {
       console.log('got current ward', ((Date.now() - ts) / 1000).toFixed(2) + 's');
-    });
+      ldsorg.getCurrentStake().getCurrentWard().getAll(function () {
+        console.log('got current ward with emails (and photos)', ((Date.now() - ts) / 1000).toFixed(2) + 's');
+      }, { fullHouseholds: true });
+    }, { fullHouseholds: false });
   }
 
-  ldsorg = LdsOrg.create({ node: isNode, Cache: Cache, cacheOpts: { cacheDir: __dirname + '/data' } });
+  ldsorg = LdsOrg.create({ node: isNode, Cache: Cache, cacheOpts: { cacheDir: __dirname + '/data' }, prefetch: false });
   ldsorg.signin(
     function (err) {
       console.log('sign-in complete');

@@ -32,6 +32,16 @@
         cb(null);
       });
     };
+    ldsDirP._signout = function (cb) {
+      var me = this
+        , url = 'https://www.lds.org/signinout/?lang=eng&signmeout'
+        ;
+
+      request.get(url, { jar: me.__jar }, function (/*err, res, body*/) {
+        me.__jar = null;
+        cb(null);
+      });
+    };
 
     ldsDirP._makeRequest = function (cb, url) {
       var me = this
@@ -54,9 +64,10 @@
           console.error(e);
           console.log(typeof body, JSON.stringify(body));
           console.log(url);
+          err = e;
         }
 
-        cb(null, data);
+        cb(err, data);
       });
     };
 

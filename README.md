@@ -140,6 +140,10 @@ TODO list respective urls and link to examples on ldsorg-api-documentation repo
 ### LdsOrg
 
   * LdsOrg.create(opts) - returns an LdsOrg instance
+  * #signin(cb, { username: 'u', password: 'p'}) - cb when signin is complete
+    * cb is a function `function (err) {}`
+    * auth is an object `{ username: 'johndoe', password: 'secret' }`
+  * #signout(cb)
   * #init(cb, emitFn) - cb when init is complete. emitFn(eventname, arg1, arg2, ...) for each event
   * #getCurrentUserId(fn)
   * #getCurrentUnits(fn)
@@ -148,6 +152,14 @@ TODO list respective urls and link to examples on ldsorg-api-documentation repo
   * #getCurrentHousehold(fn)
   * #getStake(stakeUnitNo) - returns an LdsStake instance
   * #getCurrentStake() - returns an LdsStake instance
+
+#### Options
+
+  * `{ prefetch: true }` - start downloading the whole stake at `init`
+    * current stake
+    * current ward
+    * other wards in stake
+    * other stakes
 
 ### LdsStake
 
