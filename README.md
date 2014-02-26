@@ -203,11 +203,11 @@ cat \
   "bower_components/forEachAsync/forEachAsync.js" \
   "bower_components/join/join.js" \
   "bower_components/lateral/lateral.js" \
-  "bower_components/ldsorgjs/stake.js" \
-  "bower_components/ldsorgjs/ward.js" \
-  "bower_components/ldsorgjs/browser.js" \
-  "bower_components/ldsorgjs/ldsorg.js" \
-  "bower_components/ldsorgjs/cache-browser.js" \
+  "bower_components/ldsorg/stake.js" \
+  "bower_components/ldsorg/ward.js" \
+  "bower_components/ldsorg/browser.js" \
+  "bower_components/ldsorg/ldsorg.js" \
+  "bower_components/ldsorg/cache-browser.js" \
   > ldsorg.all.js
 ```
 
