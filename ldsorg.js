@@ -503,6 +503,14 @@
         currentUserId: userArgs[1]
       , currentUnits: unitArgs[1]
       , currentStakes: stakeArgs[1]
+        // oh which key to use... dummy, fake, mock, anonymous, guest, test, demo?
+        // or... real, authentic, verified, validated
+        // accountType, role (no), entityType
+        // hmmmm... guest sounds very polite
+        // but requiring true to be present is a better practice than requiring false to be absent
+        // but real sounds stupid and one day there may also be a 'verified'... and guest sounds nice
+        // but best practices... well, 'guest' is intuitively obvious, 'real' is not
+      , guest: true === me._hogwarts
       };
 
       me.homeStake = me.stakes[me.homeStakeId];
