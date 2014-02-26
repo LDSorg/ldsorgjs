@@ -1,6 +1,6 @@
 {
   "name": "ldsorg",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "A JavaScript library for accessing LDS.org with Node.js or a browser",
   "main": "ldsorg.js",
   "scripts": {
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "foreachasync": "~3.0.0",
+    "forEachAsync": "~3.0.0",
     "join": "~3.0.0",
     "lateral": "~3.0.5"
   },
