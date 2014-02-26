@@ -371,11 +371,18 @@
     this._makeRequest(cb, url);
   };
   ldsOrgP.getImageData = function (next, imgSrc) {
-    /*
     if (this._hogwarts) {
-      this._getImageData = (exports.Hogwarts || require('./hogwarts').Hogwarts).getImageData;
+      // http://carlo.zottmann.org/2013/04/14/google-image-resizer/
+      imgSrc = 'https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy'
+        + '?url=' + encodeURIComponent(imgSrc)
+        + '&container=focus'
+        + '&resize_w=100'
+        + '&resize_h=100'
+        + '&refresh=259200'
+        ;
+      this._getImageData(next, imgSrc);
+      return;
     }
-    */
     this._getImageData(next, 'https://www.lds.org' + imgSrc);
   };
 
