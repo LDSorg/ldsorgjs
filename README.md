@@ -7,6 +7,8 @@ All of the data is exactly the same with one exception: pictures are included in
 Installation
 ===
 
+Note that `hogwarts.js` is for testing and thus optional.
+
 node.js
 ---
 
@@ -33,6 +35,7 @@ script(src="bower_components/ldsorgjs/stake.js")
 script(src="bower_components/ldsorgjs/browser.js")
 script(src="bower_components/ldsorgjs/ldsorg.js")
 script(src="bower_components/ldsorgjs/cache-browser.js")
+script(src="bower_components/ldsorgjs/hogwarts.js")
 ```
 
 ```html
@@ -44,6 +47,7 @@ script(src="bower_components/ldsorgjs/cache-browser.js")
 <script src="bower_components/ldsorgjs/browser.js"></script>
 <script src="bower_components/ldsorgjs/ldsorg.js"></script>
 <script src="bower_components/ldsorgjs/cache-browser.js"></script>
+<script src="bower_components/ldsorgjs/hogwarts.js"></script>
 ```
 
 via download
@@ -54,12 +58,15 @@ wget http://ldsorg.github.io/ldsorgjs/ldsorg.all.js
 
 ```html
 <script src="ldsorg.all.js"></script>
+<script src="bower_components/ldsorgjs/hogwarts.js"></script>
 ```
 
 Usage
 ===
 
 In about 25 seconds you can download all of the data (including pictures) for your entire ward.
+
+Note: You can log in as the user `dumbledore` with any password and have access to the fake stake `Bettendorf` from `hogwarts.js`.
 
 ```javascript
 ;(function (exports) {
