@@ -376,7 +376,7 @@
       this._getImageData = (exports.Hogwarts || require('./hogwarts').Hogwarts).getImageData;
     }
     */
-    this._getImageData(next, imgSrc);
+    this._getImageData(next, 'https://www.lds.org' + imgSrc);
   };
 
   // Methods
