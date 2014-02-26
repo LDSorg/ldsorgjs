@@ -351,10 +351,14 @@
   };
 
   ldsOrgP.signin = function (cb, auth) {
-    if (/^(dumbledore|test|guest|demo|aoeu|asdf|root|admin)$/i.test(auth.username)) {
-      cb(null);
+    if (!auth || !auth.username) {
+      cb(new Error("You didn't specify a username."));
+      return;
+    }
+    if (/^(gandalf|dumbledore|test|guest|demo|aoeu|asdf|root|admin)$/i.test(auth.username)) {
       console.info('Welcome to Hogwarts! ;-)');
       this._hogwarts = true;
+      cb(null);
       return;
     }
 
