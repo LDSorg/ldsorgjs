@@ -1,6 +1,6 @@
 {
   "name": "ldsorg",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "A JavaScript library for accessing LDS.org with Node.js or a browser",
   "main": "ldsorg.js",
   "scripts": {
