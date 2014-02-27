@@ -334,6 +334,13 @@
       , cacheOpts = {}
       ;
 
+    me.areas = {};
+    me.wards = {};
+    me.stakes = {};
+    me.homeArea = {};
+    me.homeAreaStakes = {};
+    me.homeStakeWards = {};
+
     Object.keys(me._cacheOpts).forEach(function (key) {
       cacheOpts[key] = me._cacheOpts[key];
     });
@@ -518,12 +525,6 @@
       , stakeJ = join.add()
       ;
 
-    me.areas = {};
-    me.wards = {};
-    me.stakes = {};
-
-    me.homeArea = {};
-
     me.getCurrentUserId(function (userId) {
       me.currentUserId = userId;
 
@@ -540,7 +541,6 @@
     });
     me.getCurrentStakes(function (stakes) {
       me.homeArea.stakes = stakes;
-      me.homeAreaStakes = {};
       me.homeArea.stakes.forEach(function (stake) {
         me.homeAreaStakes[stake.stakeUnitNo] = stake;
         me.stakes[stake.stakeUnitNo] = stake;
@@ -578,7 +578,6 @@
       };
 
       me.homeStake = me.stakes[me.homeStakeId];
-      me.homeStakeWards = {};
       me.homeStake.wards.forEach(function (ward) {
         me.homeStakeWards[ward.wardUnitNo] = ward;
       });
