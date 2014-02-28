@@ -28,6 +28,12 @@
           cb(new Error('Failed to authenticate. Check username / password'));
           return;
         }
+        if (/Access Denied/.test(body)) {
+          cb(new Error("You are signed in with a 'friend' account, not as a member of the church. "
+            + "Use the username 'dumbledore' and password 'secret' "
+            + "if you are a non-member developer working on a project and need access."));
+          return;
+        }
 
         cb(null);
       });

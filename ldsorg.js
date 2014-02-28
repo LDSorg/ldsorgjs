@@ -363,13 +363,17 @@
       , guestRe
       ;
 
+    me._auth = me._auth || auth;
+
     guestRe = /^(gandalf|dumbledore|test|guest|demo|aoeu|asdf|root|admin|secret|pass|password|12345678|anonymous)$/i;
-    if (!auth || !auth.username) {
+    if (!me._auth || !me._auth.username) {
       cb(new Error("You didn't specify a username."));
       return;
     }
-    if (guestRe.test(auth.username) && guestRe.test(auth.password)) {
-      window.alert("You are using a demo account. Welcome to Hogwarts!");
+    if (this._hogwarts || (guestRe.test(me._auth.username) && guestRe.test(me._auth.password))) {
+      if (exports.window) {
+        exports.window.alert("You are using a demo account. Welcome to Hogwarts!");
+      }
       console.info('Welcome to Hogwarts! ;-)');
       this._hogwarts = true;
       cb(null);
@@ -381,14 +385,14 @@
         me._authenticated = Date.now();
       }
 
-      me._auth = auth;
       cb(err, data);
-    }, auth);
+    }, me._auth);
   };
   ldsOrgP.signout = function (cb) {
     var me = this
       ;
 
+    this._hogwarts = false;
     ldsOrgP._signout(function (err) {
       if (!err) {
         me._authenticated = 0;
@@ -407,7 +411,7 @@
           console.error('Request Failed:', url);
           console.error(err);
           count += 1;
-          me._signin(doItNow);
+          me.signin(doItNow);
           return;
         }
         cb(err, data);
@@ -422,7 +426,7 @@
     // It would take about 1.5 hrs to download a complete area
     // at 25s per ward with 11 wards per stake and 18 stakes
     if (!me._authenticated || (Date.now() - me._authenticated > 30 * 60 * 1000)) {
-      me._signin(doItNow);
+      me.signin(doItNow, me._auth);
     } else {
       doItNow();
     }
