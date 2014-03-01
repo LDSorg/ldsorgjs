@@ -9,7 +9,45 @@
     , groupLeaders
     , stakeCallable = []
     , organizations
+    , guyPics = []
+    , galPics = []
+    , gupi = 0
     ;
+
+  function genGuyPhotoNums() {
+    for (gupi = 0; gupi < 80; gupi += 1) {
+      guyPics.push(gupi);
+    }
+  }
+
+  function genGalPhotoNums() {
+    for (gupi = 0; gupi < 60; gupi += 1) {
+      galPics.push(gupi);
+    }
+  }
+
+  // https://github.com/coolaj86/knuth-shuffle/blob/master/index.js
+  function shuffle(array) {
+    var currentIndex = array.length
+      , temporaryValue
+      , randomIndex
+      ;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+      // Pick a remaining element...
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+
+      // And swap it with the current element.
+      temporaryValue = array[currentIndex];
+      array[currentIndex] = array[randomIndex];
+      array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+  }
 
   function badrand() {
     return Math.random() - 0.5;
@@ -198,6 +236,7 @@
 
   // men 0-79
   // pics 0-59
+  shuffle(characters);
   characters.forEach(function (c, i) {
     var info = c.split(/:/)
       , names = (info[1] || info[0]).split(/ /g)
@@ -205,27 +244,34 @@
       , years18 = 18 * year
       , years31 = 31 * year
       , gender // = /(a|e|y)$/.test(names[0]) && 'MALE' || 'FEMALE' // meh, better than nothing
-      , num
       , sex
-      , photoNum = (Math.random() > 0.4) && Math.floor(Math.random() * 4800) || undefined
+      , photoNum
       , photoUrl
       , photoUrl2
-      , c
       ;
 
     if ('m' === info[0]) {
       gender = 'MALE';
+      if (!guyPics.length) {
+        genGuyPhotoNums();
+      }
+      photoNum = guyPics.pop();
     } else {
       gender = 'FEMALE';
+      if (!guyPics.length) {
+        genGalPhotoNums();
+      }
+      photoNum = galPics.pop();
     }
 
-    num = ('MALE' === gender) ? 80: 60;
     sex = ('MALE' === gender) ? 'men' : 'women';
 
     if ('number' === typeof photoNum) {
-      photoUrl = 'http://api.randomuser.me/0.3.1/portraits/' + sex + '/' + (photoNum % num) + '.jpg';
-      if (Math.random() > 0.2) {
-        photoUrl2 = 'http://api.randomuser.me/0.3.1/portraits/' + sex + '/' + (photoNum % num) + '.jpg';
+      if (Math.random() > 0.3) {
+        photoUrl = 'http://api.randomuser.me/0.3.1/portraits/' + sex + '/' + photoNum + '.jpg';
+      }
+      if (Math.random() > 0.1) {
+        photoUrl2 = 'http://api.randomuser.me/0.3.1/portraits/' + sex + '/' + photoNum + '.jpg';
       }
     }
 
@@ -235,15 +281,23 @@
     , last: names[names.length - 1]
     , gender: gender 
     , birthday: Date.now() - (Math.floor(Math.random() * years31) + years18)
-    , email: (Math.random() > 0.4) && (names[1] + '.' + names[0] + '@example.com') || undefined
-    , email2: (Math.random() > 0.6) && (names[1] + '_' + names[0] + '@test.net') || undefined
-    , phone: (Math.random() > 0.4) && ('1 (555) ' + String(Math.random()).replace(/.*(\d{7})/, '$1')) || undefined
-    , phone2: (Math.random() > 0.6) && ('1 (555) ' + String(Math.random()).replace(/.*(\d{7})/, '$1')) || undefined
+    , email: (Math.random() > 0.3) && (names[1] + '.' + names[0] + '@example.com') || undefined
+    , email2: (Math.random() > 0.2) && (names[1] + '_' + names[0] + '@test.net') || undefined
+    , phone: (Math.random() > 0.3) && ('1 (555) ' + String(Math.random()).replace(/.*(\d{7})/, '$1')) || undefined
+    , phone2: (Math.random() > 0.2) && ('1 (555) ' + String(Math.random()).replace(/.*(\d{7})/, '$1')) || undefined
     , photoNum: photoNum
     , photoNum2: photoNum
     , photoUrl: photoUrl
     , photoUrl2: photoUrl2
     }; 
+
+    if (!photoUrl && !photoUrl2) {
+      if ('MALE' === gender) {
+        guyPics.push(photoUrl);
+      } else {
+        galPics.push(photoUrl);
+      }
+    }
   });
 
   cache = {
@@ -559,6 +613,9 @@
     ]
   };
 
+  // TODO [callingName, id, howMany]
+  // TODO ["Stake President", 1, 1]
+  // TODO ["Stake Auditor", 1, 3]
   // attach to key "leaders"
   groupLeaders = {
     1186: [
