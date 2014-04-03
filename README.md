@@ -28,6 +28,7 @@ bower install ldsorg
 
 ```jade
 script(src="bower_components/forEachAsync/forEachAsync.js")
+script(src="bower_components/forAllAsync/forAllAsync.js")
 script(src="bower_components/join/join.js")
 script(src="bower_components/lateral/lateral.js")
 script(src="bower_components/ldsorgjs/ward.js")
@@ -39,6 +40,7 @@ script(src="bower_components/ldsorgjs/hogwarts.js")
 ```
 
 ```html
+<script src="bower_components/forAllAsync/forAllAsync.js"></script>
 <script src="bower_components/forEachAsync/forEachAsync.js"></script>
 <script src="bower_components/join/join.js"></script>
 <script src="bower_components/lateral/lateral.js"></script>
