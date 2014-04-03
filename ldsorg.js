@@ -191,6 +191,13 @@
   LdsOrg.getPhotosUrl = function (wardUnitNo) {
     return LdsOrg._urls.base + LdsOrg._urls.photos + wardUnitNo;
   };
+  LdsOrg._urls.individualPhotos = '/directory/services/ludrs/photo/url/{{individual_ids}}/individual';
+  LdsOrg.getIndividualPhotosUrl = function (individualIds) {
+    return (LdsOrg._urls.base
+            + LdsOrg._urls.individualPhotos
+                .replace(/{{individual_ids}}/g, individualIds.join(','))
+           );
+  };
 
 
   //
@@ -233,80 +240,90 @@
 
     function respondWithCache(err, data) {
       var stale = true
+        // , useless // TODO determine if it's way too stale
+        , promiseId = opts.cacheId || opts.url
         ;
 
+      // respond with the old data, but queue up new data in the background
       if (data) {
-        stale = (Date.now() - opts.updatedAt) < (opts.keepAlive || defaultKeepAlive);
-      }
-
-      if (!(stale || opts.noCache || opts.expire)) {
-        cb(null, data.value);
-        return;
+        stale = (Date.now() - data.updatedAt) < (opts.keepAlive || defaultKeepAlive);
+        if (!(opts.noCache || opts.expire)) {
+          cb(null, data.value);
+          cb = function () {};
+        }
+        if (!stale) {
+          return;
+        }
       }
 
       // poor-man's promises
-      if (opts.ldsOrg._promises[opts.cacheId]) {
-        opts.ldsOrg._promises[opts.cacheId].push(cb);
+      if (opts.ldsOrg._promises[promiseId]) {
+        opts.ldsOrg._promises[promiseId].push(cb);
         return;
       } else {
-        opts.ldsOrg._promises[opts.cacheId] = [cb];
+        opts.ldsOrg._promises[promiseId] = [cb];
       }
 
       opts.ldsOrg.makeRequest(function (err, _data) {
-        if (_data) {
+        if (_data && opts.cacheId && !opts.noCache) {
           var obj = { _id: opts.cacheId, updatedAt: Date.now(), value: _data };
           obj._rev = (_data || {})._rev;
-          if (!opts.noCache) {
-            opts.store.put(function () {}, opts.cacheId, obj);
-          }
+          opts.store.put(function () {}, opts.cacheId, obj);
         }
 
-        opts.ldsOrg._promises[opts.cacheId].forEach(function (cb) {
+        opts.ldsOrg._promises[promiseId].forEach(function (cb) {
           cb(err, _data);
         });
-        delete opts.ldsOrg._promises[opts.cacheId];
+        delete opts.ldsOrg._promises[promiseId];
       }, opts.url);
     }
 
     // TODO cache here by url
     // TODO assume base
-    opts.store.get(respondWithCache, opts.cacheId);
+    if (opts.cacheId) {
+      opts.store.get(respondWithCache, opts.cacheId);
+    } else {
+      respondWithCache();
+    }
   };
   LdsOrg._getImage = function (cb, opts) {
     function respondWithCache(err, data) {
       var stale = true
+        // , useless // TODO determine if it's way too stale
+        , promiseId = opts.cacheId || opts.url
         ;
 
+      // respond with the old data, but queue up new data in the background
       if (data) {
-        stale = (Date.now() - opts.updatedAt) < (opts.keepAlive || defaultKeepAlive);
-      }
-
-      if (!(stale || opts.noCache || opts.expire)) {
-        cb(null, data.value);
-        return;
+        stale = (Date.now() - data.updatedAt) < (opts.keepAlive || defaultKeepAlive);
+        if (!(opts.noCache || opts.expire)) {
+          cb(null, data.value);
+          cb = function () {};
+        }
+        if (!stale) {
+          return;
+        }
       }
 
       // poor-man's promises
-      if (opts.ldsOrg._promises[opts.cacheId]) {
-        opts.ldsOrg._promises[opts.cacheId].push(cb);
+      if (opts.ldsOrg._promises[promiseId]) {
+        opts.ldsOrg._promises[promiseId].push(cb);
         return;
       } else {
-        opts.ldsOrg._promises[opts.cacheId] = [cb];
+        opts.ldsOrg._promises[promiseId] = [cb];
       }
 
       opts.ldsOrg.getImageData(function (err, _data) {
-        if (_data) {
+        if (_data && opts.cacheId && !opts.noCache) {
           var obj = { _id: opts.cacheId, updatedAt: Date.now(), value: _data };
           obj._rev = (_data || {})._rev;
-          if (!opts.noCache) {
-            opts.store.put(function () {}, opts.cacheId, obj);
-          }
+          opts.store.put(function () {}, opts.cacheId, obj);
         }
 
-        opts.ldsOrg._promises[opts.cacheId].forEach(function (cb) {
+        opts.ldsOrg._promises[promiseId].forEach(function (cb) {
           cb(err, _data);
         });
-        delete opts.ldsOrg._promises[opts.cacheId];
+        delete opts.ldsOrg._promises[promiseId];
       }, opts.url);
     }
 

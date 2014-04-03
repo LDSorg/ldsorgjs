@@ -2,7 +2,8 @@
 ;(function (exports) {
   'use strict';
 
-  var LdsOrgStake = { init: function (LdsOrg, LdsWard) {
+  var forAllAsync = exports.forAllAsync || require('forallasync').forAllAsync
+    , LdsOrgStake = { init: function (LdsOrg, LdsWard) {
     function LdsStake(opts, ldsOrg) {
       var me = this
         , cacheOpts = {}
@@ -70,6 +71,52 @@
       , { url: LdsOrg.getStakeLeadershipGroupUrl(me._stakeUnitNo, group.groupKey, group.instance)
         , store: me._store
         , cacheId: 'leadership-' + group.groupName
+        , ldsOrg: me._ldsOrg, ldsStake: me }
+      );
+    };
+    ldsStakeP.getImages = function (fn, ids, sizes) {
+      sizes = sizes || ['medium']; // large, medium, thumbnail
+      var me = this
+        , url = LdsOrg.getIndividualPhotosUrl(ids)
+        , photos = {}
+        ;
+
+      me._emit('individualIds', me._stakeUnitNo, me._wardUnitNo);
+      LdsOrg._getJSON(
+        function (err, photoUrlMaps) {
+          forAllAsync(photoUrlMaps, function (next, photoUrls) {
+            photos[photoUrls.individualId] = {};
+            forAllAsync(sizes, function (next, size) {
+              var photoUrl = photoUrls[size + 'Uri']
+                ;
+
+              if (!photoUrl) {
+                next();
+                return;
+              }
+
+              LdsOrg._getImage(
+                function (err, dataUrl) {
+                  photos[photoUrls.individualId][size] = dataUrl;
+                  fn(dataUrl);
+                }
+              , { cacheId: 'individual-' + photoUrls.individualId + '-' + size + '.jpg'
+                // TODO file cache large binaries and return buffer
+                , binary: size === 'large'
+                , store: me._store
+                , url: photoUrl
+                , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, member: photoUrls.individualId }
+              );
+
+              LdsOrg._getImage();
+            });
+          }).then(function () {
+            fn(photos);
+          });
+        }
+      , { url: url
+        , store: me._store
+         // no cache for image urls
         , ldsOrg: me._ldsOrg, ldsStake: me }
       );
     };

@@ -380,6 +380,14 @@
 
       LdsOrg._getJSON(
         function (err, profile) {
+          if (err) {
+            console.error('[ERROR] getHousehold');
+            console.error(profileOrId);
+            console.error(err);
+            fn();
+            return;
+          }
+
           me._emit('household', profile);
           me._emit('householdEnd', profile);
           fn(profile);
@@ -390,8 +398,9 @@
         , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me, member: id }
       );
     };
-    ldsWardP.getHouseholdPhoto = function (fn, id) {
+    ldsWardP.getHouseholdPhoto = function (fn, id, opts) {
       var me = this
+        , size = opts.size || 'medium'
         ;
 
       me.getHousehold(function (profile) {
@@ -404,15 +413,16 @@
           function (err, dataUrl) {
             fn(dataUrl);
           }
-        , { cacheId: 'household-' + id + '.jpg'
+        , { cacheId: 'household-' + id + '-' + size + '.jpg'
           , store: me._store
           , url: profile.householdInfo.photoUrl
           , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me, member: id }
         );
       }, id);
     };
-    ldsWardP.getIndividualPhoto = function (fn, id) {
+    ldsWardP.getIndividualPhoto = function (fn, id, opts) {
       var me = this
+        , size = opts.size || 'medium'
         ;
 
       me.getHousehold(function (profile) {
@@ -425,12 +435,42 @@
           function (err, dataUrl) {
             fn(dataUrl);
           }
-        , { cacheId: 'individual-' + id + '.jpg'
+        , { cacheId: 'individual-' + id + '-' + size + '.jpg'
           , store: me._store
           , url: profile.headOfHousehold.photoUrl
           , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me, member: id }
         );
       }, id);
+    };
+    ldsWardP.getHouseholdPhotoByUrl = function (fn, id, photoUrl, size) {
+      size = size || 'medium';
+      var me = this
+        ;
+
+      LdsOrg._getImage(
+        function (err, dataUrl) {
+          fn(dataUrl);
+        }
+      , { cacheId: 'household-' + id + '-' + size + '.jpg'
+        , store: me._store
+        , url: photoUrl
+        , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me, member: id }
+      );
+    };
+    ldsWardP.getIndividualPhotoByUrl = function (fn, id, photoUrl, size) {
+      size = size || 'medium';
+      var me = this
+        ;
+
+      LdsOrg._getImage(
+        function (err, dataUrl) {
+          fn(dataUrl);
+        }
+      , { cacheId: 'individual-' + id + '-' + size + '.jpg'
+        , store: me._store
+        , url: photoUrl
+        , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me, member: id }
+      );
     };
 
     return LdsWard; 

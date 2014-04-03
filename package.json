@@ -11,6 +11,7 @@
     "url": "https://github.com/LDSorg/ldsorgjs.git"
   },
   "dependencies": {
+    "forallasync": "~1.0.1",
     "foreachasync": "~3.0.0",
     "forEachAsync": "~3.0.0",
     "join": "~3.0.0",

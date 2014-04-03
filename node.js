@@ -67,9 +67,11 @@
         try {
           data = JSON.parse(body);
         } catch(e) {
-          console.error(e);
-          console.log(typeof body, JSON.stringify(body));
           console.log(url);
+          console.error(e);
+          console.log('typeof body:', typeof body);
+          console.log('JSON.stringify(body)');
+          console.log(JSON.stringify(String(body).substr(0, 100)));
           err = e;
         }
 
@@ -88,6 +90,11 @@
 
       // encoding is utf8 by default
       request.get(imgSrc, { jar: me.__jar, encoding: null }, function (err, res, body) {
+        // TODO inspect res.status or res.statusCode or whatever
+        if (body.length < 1024) {
+          next(new Error("404"));
+          return;
+        }
         next(err, body && ('data:image/jpeg;base64,' + body.toString('base64')) || "");
       });
     };
