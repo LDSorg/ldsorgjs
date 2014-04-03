@@ -196,12 +196,14 @@ Build it yourself
 
 ```bash
 mkdir -p bower_components
+git clone git@github.com:FuturesJS/forAllAsync.git bower_components/forAllAsync
 git clone git@github.com:FuturesJS/forEachAsync.git bower_components/forEachAsync
 git clone git@github.com:FuturesJS/join.git bower_components/join
 git clone git@github.com:FuturesJS/lateral.git bower_components/lateral
 git clone git@github.com:LDSorg/ldsorgjs.git bower_components/ldsorgjs
 
 cat \
+  "bower_components/forAllAsync/forAllAsync.js" \
   "bower_components/forEachAsync/forEachAsync.js" \
   "bower_components/join/join.js" \
   "bower_components/lateral/lateral.js" \
