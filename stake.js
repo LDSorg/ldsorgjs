@@ -81,10 +81,10 @@
         , photos = {}
         ;
 
-      me._emit('individualIds', me._stakeUnitNo, me._wardUnitNo);
+      //me._emit('images', me._stakeUnitNo, ids);
       LdsOrg._getJSON(
         function (err, photoUrlMaps) {
-          forAllAsync(photoUrlMaps, function (next, photoUrls) {
+          forAllAsync(photoUrlMaps, function (n, photoUrls) {
             photos[photoUrls.individualId] = {};
             forAllAsync(sizes, function (next, size) {
               var photoUrl = photoUrls[size + 'Uri']
@@ -97,8 +97,10 @@
 
               LdsOrg._getImage(
                 function (err, dataUrl) {
-                  photos[photoUrls.individualId][size] = dataUrl;
-                  fn(dataUrl);
+                  if (!err && dataUrl) {
+                    photos[photoUrls.individualId][size] = dataUrl;
+                  }
+                  next();
                 }
               , { cacheId: 'individual-' + photoUrls.individualId + '-' + size + '.jpg'
                 // TODO file cache large binaries and return buffer
@@ -109,7 +111,7 @@
               );
 
               LdsOrg._getImage();
-            });
+            }).then(n);
           }).then(function () {
             fn(photos);
           });

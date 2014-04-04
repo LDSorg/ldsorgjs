@@ -191,7 +191,7 @@
   LdsOrg.getPhotosUrl = function (wardUnitNo) {
     return LdsOrg._urls.base + LdsOrg._urls.photos + wardUnitNo;
   };
-  LdsOrg._urls.individualPhotos = '/directory/services/ludrs/photo/url/{{individual_ids}}/individual';
+  LdsOrg._urls.individualPhotos = '/photo/url/{{individual_ids}}/individual';
   LdsOrg.getIndividualPhotosUrl = function (individualIds) {
     return (LdsOrg._urls.base
             + LdsOrg._urls.individualPhotos
