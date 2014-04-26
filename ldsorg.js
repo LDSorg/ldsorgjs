@@ -136,9 +136,9 @@
   LdsOrg.getCurrentMetaUrl = function () {
     return LdsOrg._urls.base + LdsOrg._urls.currentMeta;
   };
-  LdsOrg._urls.currentUserId = '/mem/current-user-id/';
-  LdsOrg.getCurrentUserIdUrl = function () {
-    return LdsOrg._urls.base + LdsOrg._urls.currentUserId;
+  LdsOrg._urls.currentUserInfo = '/mem/current-user-info/';
+  LdsOrg.getCurrentUserInfoUrl = function () {
+    return LdsOrg._urls.base + LdsOrg._urls.currentUserInfo;
   };
 
   //
@@ -483,15 +483,25 @@
     var me = this
       ;
 
+    me.getCurrentUserInfo(function (userInfo) {
+      fn(userInfo.individualId);
+    });
+  };
+  ldsOrgP.getCurrentUserInfo = function (fn) {
+    var me = this
+      ;
+
     LdsOrg._getJSON(
-     function (err, id) {
-        me._currentUserId = id;
-        me._emit('currentUserId', id);
-        fn(id);
+     function (err, data) {
+        me._currentUserId = data.individualId;
+        me._emit('currentUserId', data.individualInfo);
+        me._currentUserInfo = data;
+        me._emit('currentUserInfo', data);
+        fn(data);
       }
-    , { url: LdsOrg.getCurrentUserIdUrl()
+    , { url: LdsOrg.getCurrentUserInfoUrl()
       , store: me._store
-      , cacheId: 'current-user-id'
+      , cacheId: 'current-user-info'
       , ldsOrg: me
       }
     );
@@ -546,10 +556,11 @@
       , stakeJ = join.add()
       ;
 
-    me.getCurrentUserId(function (userId) {
-      me.currentUserId = userId;
+    me.getCurrentUserInfo(function (userInfo) {
+      me.currentUserId = userInfo.individualId;
+      me.currentUserInfo = userInfo;
 
-      userJ(null, userId);
+      userJ(null, userInfo.individualId, userInfo);
     });
     me.getCurrentUnits(function (units) {
       me._areaMeta = units;
@@ -586,6 +597,7 @@
 
       meta = {
         currentUserId: userArgs[1]
+      , currentUserInfo: userArgs[2]
       , currentUnits: unitArgs[1]
       , currentStakes: stakeArgs[1]
         // oh which key to use... dummy, fake, mock, anonymous, guest, test, demo?

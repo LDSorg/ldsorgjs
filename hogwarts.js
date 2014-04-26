@@ -347,7 +347,8 @@
       "wardName": things.wardName,
       "wardUnitNo": things.wardUnitNo
     }
-  , '/mem/current-user-id/': 'albusdumbledore'
+  , '/mem/current-user-id/': 'albusdumbledore' // backwards compat
+  , '/mem/current-user-info/': { individualId: 'albusdumbledore', newOption2Member: false }
   };
   cache['/mem/wardDirectory/photos/' + things.wardUnitNo] = [];
   cache['/mem/member-list/' + things.wardUnitNo] = [];

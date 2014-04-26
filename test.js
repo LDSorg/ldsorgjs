@@ -27,8 +27,8 @@
     ldsorg.getHouseholdWithPhotos(function (data) {
       console.log(data);
     }, '5754908622', {});
-    ldsorg.getCurrentUserId(function (id) {
-      console.log('got user id', id);
+    ldsorg.getCurrentUserInfo(function (info) {
+      console.log('got user id', info.individualId);
     });
     */
     ldsorg.getCurrentStake().getAll(function () {
