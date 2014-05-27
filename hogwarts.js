@@ -2685,7 +2685,6 @@
           , wardName: "Provo YSA Gryffindor Ward"
           , members: getRandomWardMembers()
           }
-          /*
         , { wardUnitNo: "hufflepuff"
           , wardName: "Provo YSA Hufflepuff Ward"
           , members: getRandomWardMembers()
@@ -2698,10 +2697,8 @@
           , wardName: "Provo YSA Slytherin Ward"
           , members: getRandomWardMembers()
           }
-          */
         ]
       }
-      /*
     , {
         stakeUnitNo: "middleearth"
       , stakeName: "Orem YSA Middle-earth Stake"
@@ -2716,7 +2713,6 @@
           }
         ]
       }
-      */
     ]
   };
 
@@ -2729,14 +2725,21 @@
   };
 
   Hogwarts.create = function (name, units) {
-    var myUniverse = getUniverse(name, units)
+    var myUniverse = getUniverse(name || defaults.name, units || defaults.units)
       ;
 
     return {
       makeRequest: function (cb, url) {
+        var global = new Function('return this')()
+          , defer = global.setImmediate || global.setTimeout
+          ;
+
         url = url.replace('https://www.lds.org/directory/services/ludrs', '');
-        cb(null, myUniverse[url]);
+        defer(function () {
+          cb(null, myUniverse[url]);
+        }, 0);
       }
+    , cache: myUniverse
     };
   };
 
