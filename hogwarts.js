@@ -3,6 +3,7 @@
   'use strict';
 
   var Hogwarts = {}
+    , singleton 
     , characters
     , cache = {}
     , things = {}
@@ -11,19 +12,24 @@
     , organizations
     , guyPics = []
     , galPics = []
-    , gupi = 0
+    , photoIndex = 0
     ;
 
   function genGuyPhotoNums() {
-    for (gupi = 0; gupi < 80; gupi += 1) {
-      guyPics.push(gupi);
+    for (photoIndex = 0; photoIndex < 99; photoIndex += 1) {
+      guyPics.push(photoIndex);
     }
   }
 
   function genGalPhotoNums() {
-    for (gupi = 0; gupi < 60; gupi += 1) {
-      galPics.push(gupi);
+    for (photoIndex = 0; photoIndex < 96; photoIndex += 1) {
+      galPics.push(photoIndex);
     }
+  }
+
+  function getCachedImage(url) {
+    return "http://images.coolaj86.com/api/resize/width/375?url="
+      + encodeURIComponent(url);
   }
 
   // https://github.com/coolaj86/knuth-shuffle/blob/master/index.js
@@ -268,10 +274,10 @@
 
     if ('number' === typeof photoNum) {
       if (Math.random() > 0.3) {
-        photoUrl = 'http://api.randomuser.me/0.3.1/portraits/' + sex + '/' + photoNum + '.jpg';
+        photoUrl = getCachedImage('http://api.randomuser.me/portraits/' + sex + '/' + photoNum + '.jpg');
       }
       if (Math.random() > 0.1) {
-        photoUrl2 = 'http://api.randomuser.me/0.3.1/portraits/' + sex + '/' + photoNum + '.jpg';
+        photoUrl2 = getCachedImage('http://api.randomuser.me/portraits/' + sex + '/' + photoNum + '.jpg');
       }
     }
 
@@ -2599,10 +2605,28 @@
     });
   });
 
+  function getUniverse() {
+    return cache;
+  }
+
   // TODO simulate user log out
   Hogwarts.makeRequest = function (cb, url) {
-    url = url.replace('https://www.lds.org/directory/services/ludrs', '');
-    cb(null, cache[url]);
+    if (!singleton) {
+      singleton = Hogwarts.create();
+    }
+    singleton.makeRequest(cb, url);
+  };
+
+  Hogwarts.create = function () {
+    var myUniverse = getUniverse()
+      ;
+
+    return {
+      makeRequest: function (cb, url) {
+        url = url.replace('https://www.lds.org/directory/services/ludrs', '');
+        cb(null, myUniverse[url]);
+      }
+    };
   };
 
   exports.Hogwarts = Hogwarts.Hogwarts = Hogwarts;
