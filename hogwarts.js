@@ -2205,7 +2205,8 @@
     "Blaise Zabini"
   ];
 
-  function getRandomWardMembers() {
+  // TODO allow number range
+  function getRandomWardMembers(/*num*/) {
     var genderedNames = shuffle(genderedNamesTpl.slice(0))
       , flatMemberRecords = []
       ;
@@ -2682,10 +2683,40 @@
       , wards: [
           { wardUnitNo: "gryffindor"
           , wardName: "Provo YSA Gryffindor Ward"
-          , members: getRandomWardMembers(/*num*/)
+          , members: getRandomWardMembers()
+          }
+          /*
+        , { wardUnitNo: "hufflepuff"
+          , wardName: "Provo YSA Hufflepuff Ward"
+          , members: getRandomWardMembers()
+          }
+        , { wardUnitNo: "ravenclaw"
+          , wardName: "Provo YSA Ravenclaw Ward"
+          , members: getRandomWardMembers()
+          }
+        , { wardUnitNo: "slytherin"
+          , wardName: "Provo YSA Slytherin Ward"
+          , members: getRandomWardMembers()
+          }
+          */
+        ]
+      }
+      /*
+    , {
+        stakeUnitNo: "middleearth"
+      , stakeName: "Orem YSA Middle-earth Stake"
+      , wards: [
+          { wardUnitNo: "shire"
+          , wardName: "Orem YSA Shire Ward"
+          , members: getRandomWardMembers()
+          }
+        , { wardUnitNo: "rivendell"
+          , wardName: "Orem YSA Rivendell Ward"
+          , members: getRandomWardMembers()
           }
         ]
       }
+      */
     ]
   };
 
