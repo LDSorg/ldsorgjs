@@ -12,10 +12,6 @@
     , photoIndex = 0
     ;
 
-  function clone(obj) {
-    return JSON.parse(JSON.stringify(obj));
-  }
-
   function genGuyPhotoNums() {
     // men 0-99
     for (photoIndex = 0; photoIndex < 99; photoIndex += 1) {
@@ -2676,16 +2672,16 @@
     areaUnitNo: "hogwartsmagicrealm"
     // 'bettendorf' being one of the houses is an inside joke with my sister
   , stakeUnitNo: "bettendorf"
-  , stakeName: "Provo YSA 0th Bettendorf Stake"
+  , stakeName: "Provo YSA Bettendorf Stake"
   , wardUnitNo: "gryffindor"
-  , wardName: "Provo YSA 0th Griffindor Ward"
+  , wardName: "Provo YSA Gryffindor Ward"
   , stakes: [
       {
         stakeUnitNo: "bettendorf"
-      , stakeName: "Provo YSA 0th Bettendorf Stake"
+      , stakeName: "Provo YSA Bettendorf Stake"
       , wards: [
           { wardUnitNo: "gryffindor"
-          , wardName: "Provo YSA 0th Griffindor Ward"
+          , wardName: "Provo YSA Gryffindor Ward"
           , members: getRandomWardMembers(/*num*/)
           }
         ]
