@@ -2340,10 +2340,175 @@
     return stakes;
   }
 
+  function mapFlatToMemberList(c) {
+    return {
+      "children": [],
+      "coupleName": c.last + ", " + c.first,
+      "headOfHouse": {
+        "directoryName": c.last + ", " + c.first,
+        "gender": c.gender,
+        "individualId": c.id,
+        "latinName": c.last,
+        "latinNameDifferent": false,
+        "preferredName": c.last + ", " + c.first,
+        "surname": c.last
+      },
+      "headOfHouseIndividualId": c.id,
+      "householdName": c.last,
+      "isProfilePrivate": false,
+      "spouse": {
+        "directoryName": "",
+        "gender": "",
+        "individualId": -1,
+        "latinName": "",
+        "latinNameDifferent": true,
+        "preferredName": "",
+        "surname": ""
+      }
+    };
+  }
+
+  function mapFlatToPhotos(c) {
+    return {
+      "householdId": c.id,
+      "householdName": c.last + ", " + c.first,
+      "phoneNumber": c.phone,
+      "photoUrl": c.photoUrl
+    };
+  }
+
+  function mapFlatToHousehold(c, address, areaInfo, stakeInfo, wardInfo) {
+    return {
+      "canViewMapLink": true,
+      "hasEditRights": true,
+      "headOfHousehold": {
+        "address": null,
+        "addressLevel": null,
+        "birthDateLevel": "WARD",
+        "email": c.email,
+        "emailLevel": "STAKE",
+        "imageId": c.photoNum,
+        "imageLevel": "STAKE",
+        "individualId": c.id,
+        "isAllPrivate": false,
+        "mapLevel": null,
+        "masterLevel": null,
+        "name": c.last + ', ' + c.first,
+        "phone": c.phone,
+        "phoneLevel": "STAKE",
+        "photoUrl": c.photoUrl
+      },
+      "householdInfo": {
+        "address": {
+          "addr1": address,
+          "addr2": "Provo, Utah 84604",
+          "addr3": "",
+          "addr4": "",
+          "addr5": "",
+          "city": "Provo",
+          "countryCode": 251,
+          "countryIsoAlphaCode": "USA",
+          "district": "",
+          "groupId": 1670219,
+          "latitude": 40.2599249,
+          "locallyVerifiedCode": "",
+          "longitude": -111.6556598,
+          "postal": "84604",
+          "state": "Utah",
+          "stateCode": 44,
+          "streetAddr1": address,
+          "streetAddr2": ""
+        },
+        "addressLevel": "STAKE",
+        "birthDateLevel": null,
+        "email": c.email2,
+        "emailLevel": "STAKE",
+        "imageId": c.photoNum2,
+        "imageLevel": "STAKE",
+        "individualId": c.id,
+        "isAllPrivate": false,
+        "mapLevel": "STAKE",
+        "masterLevel": "STAKE",
+        "name": c.last,
+        "phone": c.phone2,
+        "phoneLevel": "STAKE",
+        "photoUrl": c.photoUrl2
+      },
+      "id": 0,
+      "inWard": true,
+      "isEuMember": false,
+      "otherHouseholdMembers": [],
+      "spouse": null,
+      "ward": {
+        "areaUnitNo": areaInfo.areaUnitNo,
+        "branch": false,
+        "district": false,
+        "mission": false,
+        "stake": true,
+        "stakeName": stakeInfo.stakeName,
+        "stakeUnitNo": stakeInfo.stakeUnitNo,
+        "ward": true,
+        "wardName": wardInfo.wardName,
+        "wardUnitNo": wardInfo.wardUnitNo
+      }
+    };
+  }
+
+  function getStakeLeadership(cache, groupLeaders, stakeInfo, group) {
+    var leaders = groupLeaders[group.groupKey].slice(0)
+      ;
+
+    groupLeaders[group.groupKey].sortedPositions = groupLeaders[group.groupKey].positions;
+    // I think this is just something that I did and I'm copying myself
+    // otherwise the next link is obselete
+    group.leaders = leaders;
+
+    cache['/1.1/unit/stake-leadership-group-detail/'
+      + stakeInfo.stakeUnitNo + '/'
+      + group.groupKey + '/'
+        // some provo wards have two relief societies
+        // I think that's what the instance is for
+      + group.instance
+    ] = { 
+      leaders: group.leaders
+    , unitName: stakeInfo.stakeName
+    };
+    group.leaders.forEach(function (leader) {
+      var gender = 'MALE'
+        , person
+        , i = 0
+        ;
+
+      if (/music|activities/i.test(group.groupName)) {
+        gender = null;
+      }
+      if (/Relief/i.test(group.groupName)) {
+        gender = 'FEMALE';
+      }
+
+      while (!person || (gender && (person.gender !== gender))) {
+        person = stakeInfo.callable.pop();
+        if (!person || i > 20) {
+          stakeInfo.callable = stakeInfo.members.slice(0).sort(badrand);
+        } else {
+          stakeInfo.callable.unshift(person);
+        }
+        i += 1;
+      }
+
+      //leader.callingName;
+      leader.displayName = person.first + ' ' + person.last;
+      leader.email = person.email;
+      leader.householdPhoneNumber = person.phone2;
+      leader.individualId = person.id;
+      leader.phoneNumber = person.phone;
+      leader.photoUri = person.photoUrl;
+      //leader.positionId;
+    });
+  }
+
   function getUniverse(username, things) {
     var cache = {}
-      , wardMembers = things.stakes[0].wards[0].members
-      , stakeCallable = []
       , groupLeaders
       ;
 
@@ -2351,292 +2516,152 @@
     cache['/unit/current-user-ward-stake/'] = getCurrentUnits(things);
     cache['/mem/current-user-id/'] = username; // backwards compat
     cache['/mem/current-user-info/'] = { individualId: username, newOption2Member: false };
-    cache['/mem/wardDirectory/photos/' + things.wardUnitNo] = [];
-    cache['/mem/member-list/' + things.wardUnitNo] = [];
-    cache['/1.1/unit/stake-leadership-positions/' + things.stakeUnitNo] = getStakeLeadershipPositions(things.stakeName);
 
-    stakeCallable = wardMembers.slice(0).sort(function () { return 0.5 - Math.random(); });
-    groupLeaders = clone(groupLeadersTpl);
-    cache['/1.1/unit/stake-leadership-positions/' + things.stakeUnitNo].unitLeadership.forEach(function (group) {
-      var leaders = groupLeaders[group.groupKey].slice(0)
-        ;
+    things.stakes.forEach(function (stakeInfo) {
+      stakeInfo.members = [];
 
-      groupLeaders[group.groupKey].sortedPositions = groupLeaders[group.groupKey].positions;
-      // I think this is just something that I did and I'm copying myself
-      // otherwise the next link is obselete
-      group.leaders = leaders;
+      cache['/1.1/unit/stake-leadership-positions/' + stakeInfo.stakeUnitNo]
+        = getStakeLeadershipPositions(stakeInfo.stakeName);
 
-      cache['/1.1/unit/stake-leadership-group-detail/'
-        + things.stakeUnitNo + '/'
-        + group.groupKey + '/'
-          // some provo wards have two relief societies
-          // I think that's what the instance is for
-        + group.instance
-      ] = { 
-        leaders: group.leaders
-      , unitName: things.stakeName
-      };
-      group.leaders.forEach(function (leader) {
-        var gender = 'MALE'
-          , person
-          , i = 0
-          ;
+      // Getting the big list of members is important to do first
+      stakeInfo.wards.forEach(function (wardInfo) {
+        cache['/mem/wardDirectory/photos/' + wardInfo.wardUnitNo] = [];
+        cache['/mem/member-list/' + wardInfo.wardUnitNo] = [];
 
-        if (/music|activities/i.test(group.groupName)) {
-          gender = null;
-        }
-        if (/Relief/i.test(group.groupName)) {
-          gender = 'FEMALE';
-        }
-
-        while (!person || (gender && (person.gender !== gender))) {
-          person = stakeCallable.pop();
-          if (!person || i > 20) {
-            stakeCallable = wardMembers.slice(0).sort(badrand);
-          } else {
-            stakeCallable.unshift(person);
-          }
-          i += 1;
-        }
-
-        //leader.callingName;
-        leader.displayName = person.first + ' ' + person.last;
-        leader.email = person.email;
-        leader.householdPhoneNumber = person.phone2;
-        leader.individualId = person.id;
-        leader.phoneNumber = person.phone;
-        leader.photoUri = person.photoUrl;
-        //leader.positionId;
+        stakeInfo.members = stakeInfo.members.concat(wardInfo.members);
       });
-    });
 
-    // household
-    wardMembers.forEach(function (c) {
-      var address = (('MALE' === c.gender) ? 750 : 754) + " W 1700 N Apt " + (Math.floor(Math.random() * 30) + 1)
-        ;
-
-      cache['/mem/householdProfile/' + c.id] = {
-        "canViewMapLink": true,
-        "hasEditRights": true,
-        "headOfHousehold": {
-          "address": null,
-          "addressLevel": null,
-          "birthDateLevel": "WARD",
-          "email": c.email,
-          "emailLevel": "STAKE",
-          "imageId": c.photoNum,
-          "imageLevel": "STAKE",
-          "individualId": c.id,
-          "isAllPrivate": false,
-          "mapLevel": null,
-          "masterLevel": null,
-          "name": c.last + ', ' + c.first,
-          "phone": c.phone,
-          "phoneLevel": "STAKE",
-          "photoUrl": c.photoUrl
-        },
-        "householdInfo": {
-          "address": {
-            "addr1": address,
-            "addr2": "Provo, Utah 84604",
-            "addr3": "",
-            "addr4": "",
-            "addr5": "",
-            "city": "Provo",
-            "countryCode": 251,
-            "countryIsoAlphaCode": "USA",
-            "district": "",
-            "groupId": 1670219,
-            "latitude": 40.2599249,
-            "locallyVerifiedCode": "",
-            "longitude": -111.6556598,
-            "postal": "84604",
-            "state": "Utah",
-            "stateCode": 44,
-            "streetAddr1": address,
-            "streetAddr2": ""
-          },
-          "addressLevel": "STAKE",
-          "birthDateLevel": null,
-          "email": c.email2,
-          "emailLevel": "STAKE",
-          "imageId": c.photoNum2,
-          "imageLevel": "STAKE",
-          "individualId": c.id,
-          "isAllPrivate": false,
-          "mapLevel": "STAKE",
-          "masterLevel": "STAKE",
-          "name": c.last,
-          "phone": c.phone2,
-          "phoneLevel": "STAKE",
-          "photoUrl": c.photoUrl2
-        },
-        "id": 0,
-        "inWard": true,
-        "isEuMember": false,
-        "otherHouseholdMembers": [],
-        "spouse": null,
-        "ward": {
-          "areaUnitNo": things.areaUnitNo,
-          "branch": false,
-          "district": false,
-          "mission": false,
-          "stake": true,
-          "stakeName": things.stakeName,
-          "stakeUnitNo": things.stakeUnitNo,
-          "ward": true,
-          "wardName": things.wardName,
-          "wardUnitNo": things.wardUnotNo
-        }
-      };
-    });
-
-    //
-    // photos
-    //
-    wardMembers.forEach(function (c) {
-      cache['/mem/wardDirectory/photos/' + things.wardUnitNo].push(
-        {
-          "householdId": c.id,
-          "householdName": c.last + ", " + c.first,
-          "phoneNumber": c.phone,
-          "photoUrl": c.photoUrl
-        }
-      );
-    });
-
-    //
-    // member-list
-    //
-    wardMembers.forEach(function (c) {
-      cache['/mem/member-list/' + things.wardUnitNo].push(
-        {
-          "children": [],
-          "coupleName": c.last + ", " + c.first,
-          "headOfHouse": {
-            "directoryName": c.last + ", " + c.first,
-            "gender": c.gender,
-            "individualId": c.id,
-            "latinName": c.last,
-            "latinNameDifferent": false,
-            "preferredName": c.last + ", " + c.first,
-            "surname": c.last
-          },
-          "headOfHouseIndividualId": c.id,
-          "householdName": c.last,
-          "isProfilePrivate": false,
-          "spouse": {
-            "directoryName": "",
-            "gender": "",
-            "individualId": -1,
-            "latinName": "",
-            "latinNameDifferent": true,
-            "preferredName": "",
-            "surname": ""
-          }
-        }
-      );
-    });
+      stakeInfo.callable = stakeInfo.members.slice(0).sort(function () { return 0.5 - Math.random(); });
+      groupLeaders = clone(groupLeadersTpl);
+      cache['/1.1/unit/stake-leadership-positions/' + stakeInfo.stakeUnitNo]
+        .unitLeadership.forEach(getStakeLeadership.bind(null, cache, groupLeaders, stakeInfo));
+      // getStakeLeadership(cache, groupLeaders, stakeInfo, group) {
 
 
-    Object.keys(organizations).forEach(function (key) {
-      var organizationName = key.toUpperCase()
-        , members
-        ;
+      stakeInfo.wards.forEach(function (wardInfo) {
+        // household
+        wardInfo.members.forEach(function (c) {
+          var address = (('MALE' === c.gender) ? 750 : 754) + " W 1700 N Apt " + (Math.floor(Math.random() * 30) + 1)
+            ;
 
-      if ('elder' === key) {
-        members = wardMembers.slice(0).filter(function (c) {
-          return 'MALE' === c.gender;
+          //cache['/mem/householdProfile/' + c.id] = mapFlatToHousehold(c, address, areaInfo, stakeInfo, wardInfo);
+          cache['/mem/householdProfile/' + c.id] = mapFlatToHousehold(c, address, things, things, things);
         });
-      } else if ('relief_society' === key) {
-        members = wardMembers.slice(0).filter(function (c) {
-          return 'FEMALE' === c.gender;
+
+        //
+        // photos
+        //
+        wardInfo.members.forEach(function (c) {
+          cache['/mem/wardDirectory/photos/' + things.wardUnitNo].push(mapFlatToPhotos(c));
         });
-      } else if ('adults' === key) {
-        members = wardMembers;
-      } else {
-        // Typical Single's Ward... no teens, no kids, no babies
-        members = [];
-      }
 
-      cache["/1.1/unit/roster/" + things.wardUnitNo + '/' + organizationName] = members.map(function (m) {
-        return {
-          "birthdate": null,
-          "directoryName": m.last + ', ' + m.first,
-          "email": m.email,
-          "formattedName": m.last + ', ' + m.first, // "Mad-Eye" Moody
-          "givenName1": m.first + ' ' + m.last,     // Alastor Moody
-          "individualId": m.id,
-          "memberId": "", // member id field exists, but is not actually populated
-          "phone": m.phone,
-          "photoUrl": m.photoUrl,
-          "preferredName": m.last + ', ' + m.first,
-          "surname": m.last
-        };
-      });
-    });
+        //
+        // member-list
+        //
+        wardInfo.members.forEach(function (c) {
+          cache['/mem/member-list/' + things.wardUnitNo].push(mapFlatToMemberList(c));
+        });
 
-    cache["/1.1/unit/ward-leadership-positions/" + things.wardUnitNo + "/true"] = getWardLeadershipPositions(things.wardName);
+        Object.keys(organizations).forEach(function (key) {
+          var organizationName = key.toUpperCase()
+            , members
+            ;
 
-    cache["/1.1/unit/ward-leadership-positions/" + things.wardUnitNo + "/true"].wardLeadership.forEach(function (group) {
-      // no idea why these seem to be duplicates of each other...
-      group.sortedPositions = group.positions;
-    });
-    cache["/1.1/unit/ward-leadership-positions/" + things.wardUnitNo + "/true"].unitLeadership.forEach(function (group) {
-      var leaders = group.leaders.slice(0)
-        ;
-
-      // I think this is just something that I did and I'm copying myself
-      // otherwise the next link is obselete
-      group.leaders = leaders;
-      group.sortedPositions = group.positions;
-
-      // actually for wards, even though it stays stake
-      // this seems to imply that a wardUnitNo
-      // will never be the same as a stakeUnitNo
-      cache['/1.1/unit/stake-leadership-group-detail/'
-        + things.wardUnitNo + '/'
-        + group.groupKey + '/'
-          // some provo wards have two relief societies
-          // I think that's what the instance is for
-        + group.instance
-      ] = { 
-        leaders: group.leaders
-      , unitName: things.wardName
-      };
-      group.leaders.forEach(function (leader) {
-        var gender = null
-          , person
-          , mre = /(bishop|elder|clerk|exec|dad|home teach|patriarch|audit|high)/i
-          , fre = /(\brs\b|relief|mom|sister|visit.*?teach)/i
-          //, nre = /music|activities|adult/i
-          , i = 0
-          ;
-
-        if (fre.test(group.groupName) || fre.test(leader.callingName)) {
-          gender = 'FEMALE';
-        } else if (mre.test(group.groupName) || mre.test(leader.callingName)) {
-          gender = 'MALE';
-        }
-
-        while (!person || (gender && person.gender !== gender)) {
-          person = stakeCallable.pop();
-          if (!person || i > 20) {
-            stakeCallable = wardMembers.slice(0).sort(badrand);
+          if ('elder' === key) {
+            members = wardInfo.members.slice(0).filter(function (c) {
+              return 'MALE' === c.gender;
+            });
+          } else if ('relief_society' === key) {
+            members = wardInfo.members.slice(0).filter(function (c) {
+              return 'FEMALE' === c.gender;
+            });
+          } else if ('adults' === key) {
+            members = wardInfo.members;
           } else {
-            stakeCallable.unshift(person);
+            // Typical Single's Ward... no teens, no kids, no babies
+            members = [];
           }
-          i += 1;
-        }
 
-        //leader.callingName;
-        leader.displayName = person.first + ' ' + person.last;
-        leader.email = person.email;
-        leader.householdPhoneNumber = person.phone2;
-        leader.individualId = person.id;
-        leader.phoneNumber = person.phone;
-        leader.photoUri = person.photoUrl;
-        //leader.positionId;
+          cache["/1.1/unit/roster/" + things.wardUnitNo + '/' + organizationName] = members.map(function (m) {
+            return {
+              "birthdate": null,
+              "directoryName": m.last + ', ' + m.first,
+              "email": m.email,
+              "formattedName": m.last + ', ' + m.first, // "Mad-Eye" Moody
+              "givenName1": m.first + ' ' + m.last,     // Alastor Moody
+              "individualId": m.id,
+              "memberId": "", // member id field exists, but is not actually populated
+              "phone": m.phone,
+              "photoUrl": m.photoUrl,
+              "preferredName": m.last + ', ' + m.first,
+              "surname": m.last
+            };
+          });
+        });
+
+        cache["/1.1/unit/ward-leadership-positions/" + things.wardUnitNo + "/true"] = getWardLeadershipPositions(things.wardName);
+
+        cache["/1.1/unit/ward-leadership-positions/" + things.wardUnitNo + "/true"].wardLeadership.forEach(function (group) {
+          // no idea why these seem to be duplicates of each other...
+          group.sortedPositions = group.positions;
+        });
+        cache["/1.1/unit/ward-leadership-positions/" + things.wardUnitNo + "/true"].unitLeadership.forEach(function (group) {
+          var leaders = group.leaders.slice(0)
+            ;
+
+          // I think this is just something that I did and I'm copying myself
+          // otherwise the next link is obselete
+          group.leaders = leaders;
+          group.sortedPositions = group.positions;
+
+          // actually for wards, even though it stays stake
+          // this seems to imply that a wardUnitNo
+          // will never be the same as a stakeUnitNo
+          cache['/1.1/unit/stake-leadership-group-detail/'
+            + things.wardUnitNo + '/'
+            + group.groupKey + '/'
+              // some provo wards have two relief societies
+              // I think that's what the instance is for
+            + group.instance
+          ] = { 
+            leaders: group.leaders
+          , unitName: things.wardName
+          };
+          group.leaders.forEach(function (leader) {
+            var gender = null
+              , person
+              , mre = /(bishop|elder|clerk|exec|dad|home teach|patriarch|audit|high)/i
+              , fre = /(\brs\b|relief|mom|sister|visit.*?teach)/i
+              //, nre = /music|activities|adult/i
+              , i = 0
+              ;
+
+            if (fre.test(group.groupName) || fre.test(leader.callingName)) {
+              gender = 'FEMALE';
+            } else if (mre.test(group.groupName) || mre.test(leader.callingName)) {
+              gender = 'MALE';
+            }
+
+            while (!person || (gender && person.gender !== gender)) {
+              person = stakeInfo.callable.pop();
+              if (!person || i > 20) {
+                stakeInfo.callable = stakeInfo.members.slice(0).sort(badrand);
+              } else {
+                stakeInfo.callable.unshift(person);
+              }
+              i += 1;
+            }
+
+            //leader.callingName;
+            leader.displayName = person.first + ' ' + person.last;
+            leader.email = person.email;
+            leader.householdPhoneNumber = person.phone2;
+            leader.individualId = person.id;
+            leader.phoneNumber = person.phone;
+            leader.photoUri = person.photoUrl;
+            //leader.positionId;
+          });
+        });
       });
     });
 
