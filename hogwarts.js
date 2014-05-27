@@ -5,7 +5,7 @@
   var Hogwarts = {}
     , singleton 
     , defaults
-    , genderedNames
+    , genderedNamesTpl
     , groupLeadersTpl
     , organizations
     , guyPics = []
@@ -18,12 +18,14 @@
   }
 
   function genGuyPhotoNums() {
+    // men 0-99
     for (photoIndex = 0; photoIndex < 99; photoIndex += 1) {
       guyPics.push(photoIndex);
     }
   }
 
   function genGalPhotoNums() {
+    // women 0-96
     for (photoIndex = 0; photoIndex < 96; photoIndex += 1) {
       galPics.push(photoIndex);
     }
@@ -2037,7 +2039,7 @@
   // Lord of the Rings
   // Star Trek
   // Harry Potter
-  genderedNames = [
+  genderedNamesTpl = [
     "f:Hannah Abbott",
     "f:Bathsheba Babbling",
     "m:Ludo Bagman",
@@ -2205,17 +2207,12 @@
     "Blaise Zabini"
   ];
 
-  function getUniverse(username, things) {
-    var cache = {}
-      , characters
-      , stakeCallable = []
-      , groupLeaders
+  function getRandomWardMembers() {
+    var genderedNames = shuffle(genderedNamesTpl.slice(0))
+      , flatMemberRecords = []
       ;
 
-    // men 0-79
-    // pics 0-59
-    characters = shuffle(genderedNames.slice(0));
-    characters.forEach(function (c, i) {
+    genderedNames.forEach(function (c, i) {
       var info = c.split(/:/)
         , names = (info[1] || info[0]).split(/ /g)
         , year = (365 * 24 * 60 * 60 * 1000)
@@ -2253,7 +2250,7 @@
         }
       }
 
-      c = characters[i] = {
+      c = flatMemberRecords[i] = {
         id: (names[0] + names[1]).toLowerCase()
       , first: names[0]
       , last: names[names.length - 1]
@@ -2278,59 +2275,87 @@
       }
     });
 
-    cache['/unit/current-user-units/'] = [
-      {
-        "district": false,
-        "mission": false,
-        "stake": true,
-        "stakeName": things.stakeName,
-        "stakeUnitNo": things.stakeUnitNo,
-        "userHasStakeAdminRights": false,
-        "wards": [
-          {
-            "areaUnitNo": things.areaUnitNo,
-            "branch": false,
-            "district": false,
-            "mission": false,
-            "newPhotoCount": -1,
-            "stake": true,
-            "stakeName": things.stakeName,
-            "stakeUnitNo": things.stakeUnitNo,
-            "userHasStakeAdminRights": false,
-            "userHasWardAdminRights": false,
-            "userHasWardCalling": false,
-            "usersHomeWard": true,
-            "ward": true,
-            "wardName": things.wardName,
-            "wardUnitNo": things.wardUnitNo
-          }
-        ]
-      }
-    ];
-    cache['/unit/current-user-ward-stake/'] = {
-      "areaUnitNo": things.areaUnitNo,
+    return flatMemberRecords;
+  }
+
+  function getCurrentUnits(userInfo) {
+    return {
+      "areaUnitNo": userInfo.areaUnitNo,
       "branch": false,
       "district": false,
       "mission": false,
       "newPhotoCount": -1,
       "stake": true,
-      "stakeName": things.stakeName,
-      "stakeUnitNo": things.stakeUnitNo,
+      "stakeName": userInfo.stakeName,
+      "stakeUnitNo": userInfo.stakeUnitNo,
       "userHasStakeAdminRights": false,
       "userHasWardAdminRights": false,
       "userHasWardCalling": false,
       "usersHomeWard": true,
       "ward": true,
-      "wardName": things.wardName,
-      "wardUnitNo": things.wardUnitNo
+      "wardName": userInfo.wardName,
+      "wardUnitNo": userInfo.wardUnitNo
     };
+  }
+
+  function getAvailableUnits(areaInfo) {
+    var stakes = []
+      ;
+      
+    areaInfo.stakes.forEach(function (stakeInfo) {
+      var wards = []
+        ;
+
+      stakeInfo.wards.forEach(function (wardInfo) {
+        wards.push({
+          "areaUnitNo": areaInfo.areaUnitNo,
+          "branch": false,
+          "district": false,
+          "mission": false,
+          "newPhotoCount": -1,
+          "stake": true,
+          "stakeName": stakeInfo.stakeName,
+          "stakeUnitNo": stakeInfo.stakeUnitNo,
+          "userHasStakeAdminRights": false,
+          "userHasWardAdminRights": false,
+          "userHasWardCalling": false,
+          "usersHomeWard": true,
+          "ward": true,
+          "wardName": wardInfo.wardName,
+          "wardUnitNo": wardInfo.wardUnitNo
+        });
+      });
+
+      stakes.push({
+        "district": false,
+        "mission": false,
+        "stake": true,
+        "stakeName": stakeInfo.stakeName,
+        "stakeUnitNo": stakeInfo.stakeUnitNo,
+        "userHasStakeAdminRights": false,
+        "wards": wards
+      });
+    });
+
+    return stakes;
+  }
+
+  function getUniverse(username, things) {
+    var cache = {}
+      , wardMembers = things.stakes[0].wards[0].members
+      , stakeCallable = []
+      , groupLeaders
+      ;
+
+    cache['/unit/current-user-units/'] = getAvailableUnits(things);
+    cache['/unit/current-user-ward-stake/'] = getCurrentUnits(things);
     cache['/mem/current-user-id/'] = username; // backwards compat
     cache['/mem/current-user-info/'] = { individualId: username, newOption2Member: false };
     cache['/mem/wardDirectory/photos/' + things.wardUnitNo] = [];
     cache['/mem/member-list/' + things.wardUnitNo] = [];
     cache['/1.1/unit/stake-leadership-positions/' + things.stakeUnitNo] = getStakeLeadershipPositions(things.stakeName);
 
-    stakeCallable = characters.slice(0).sort(function () { return 0.5 - Math.random(); });
+    stakeCallable = wardMembers.slice(0).sort(function () { return 0.5 - Math.random(); });
     groupLeaders = clone(groupLeadersTpl);
     cache['/1.1/unit/stake-leadership-positions/' + things.stakeUnitNo].unitLeadership.forEach(function (group) {
       var leaders = groupLeaders[group.groupKey].slice(0)
@@ -2367,7 +2392,7 @@
         while (!person || (gender && (person.gender !== gender))) {
           person = stakeCallable.pop();
           if (!person || i > 20) {
-            stakeCallable = characters.slice(0).sort(badrand);
+            stakeCallable = wardMembers.slice(0).sort(badrand);
           } else {
             stakeCallable.unshift(person);
           }
@@ -2386,7 +2411,7 @@
     });
 
     // household
-    characters.forEach(function (c) {
+    wardMembers.forEach(function (c) {
       var address = (('MALE' === c.gender) ? 750 : 754) + " W 1700 N Apt " + (Math.floor(Math.random() * 30) + 1)
         ;
 
@@ -2469,7 +2494,7 @@
     //
     // photos
     //
-    characters.forEach(function (c) {
+    wardMembers.forEach(function (c) {
       cache['/mem/wardDirectory/photos/' + things.wardUnitNo].push(
         {
           "householdId": c.id,
@@ -2483,7 +2508,7 @@
     //
     // member-list
     //
-    characters.forEach(function (c) {
+    wardMembers.forEach(function (c) {
       cache['/mem/member-list/' + things.wardUnitNo].push(
         {
           "children": [],
@@ -2520,15 +2545,15 @@
         ;
 
       if ('elder' === key) {
-        members = characters.slice(0).filter(function (c) {
+        members = wardMembers.slice(0).filter(function (c) {
           return 'MALE' === c.gender;
         });
       } else if ('relief_society' === key) {
-        members = characters.slice(0).filter(function (c) {
+        members = wardMembers.slice(0).filter(function (c) {
           return 'FEMALE' === c.gender;
         });
       } else if ('adults' === key) {
-        members = characters;
+        members = wardMembers;
       } else {
         // Typical Single's Ward... no teens, no kids, no babies
         members = [];
@@ -2597,7 +2622,7 @@
         while (!person || (gender && person.gender !== gender)) {
           person = stakeCallable.pop();
           if (!person || i > 20) {
-            stakeCallable = characters.slice(0).sort(badrand);
+            stakeCallable = wardMembers.slice(0).sort(badrand);
           } else {
             stakeCallable.unshift(person);
           }
@@ -2626,6 +2651,18 @@
   , stakeName: "Provo YSA 0th Bettendorf Stake"
   , wardUnitNo: "gryffindor"
   , wardName: "Provo YSA 0th Griffindor Ward"
+  , stakes: [
+      {
+        stakeUnitNo: "bettendorf"
+      , stakeName: "Provo YSA 0th Bettendorf Stake"
+      , wards: [
+          { wardUnitNo: "gryffindor"
+          , wardName: "Provo YSA 0th Griffindor Ward"
+          , members: getRandomWardMembers(/*num*/)
+          }
+        ]
+      }
+    ]
   };
 
   // TODO simulate user log out
