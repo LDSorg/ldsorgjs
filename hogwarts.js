@@ -6,7 +6,6 @@
     , singleton 
     , defaults
     , genderedNamesTpl
-    , groupLeadersTpl
     , organizations
     , guyPics = []
     , galPics = []
@@ -32,7 +31,8 @@
   }
 
   function getCachedImage(url) {
-    return "http://images.coolaj86.com/api/resize/width/375?url="
+    // 375, 150, 40
+    return "http://images.coolaj86.com/api/resize/width/150?url="
       + encodeURIComponent(url);
   }
 
@@ -80,85 +80,87 @@
   // TODO ["Stake President", 1, 1]
   // TODO ["Stake Auditor", 1, 3]
   // attach to key "leaders"
-  groupLeadersTpl = {
-    1186: [
-      { "callingName": "Stake President",
-        "positionId": 1
-      },
-      { "callingName": "Stake Presidency First Counselor",
-        "positionId": 2
-      },
-      { "callingName": "Stake Presidency Second Counselor",
-        "positionId": 3
-      },
-      { "callingName": "Stake Executive Secretary",
-        "positionId": 51
-      },
-      { "callingName": "Stake Clerk",
-        "positionId": 52
-      },
-      { "callingName": "Stake Assistant Clerk",
-        "positionId": 53
-      },
-      { "callingName": "Stake Assistant Executive Secretary",
-        "positionId": 491
-      }
-    ]
-  , 1189: [
-      { "callingName": "Stake High Councilor",
-        "positionId": 94
-      },
-      { "callingName": "Stake High Councilor",
-        "positionId": 94
-      }
-    ]
-  , 1190: [
-      { "callingName": "Patriarch",
-        "positionId": 13
-      }
-    ]
-  , 1281: [
-      { "callingName": "Stake Auditor",
-        "positionId": 691
-      },
-      { "callingName": "Stake Auditor",
-        "positionId": 691
-      },
-      { "callingName": "Stake Auditor",
-        "positionId": 691
-      },
-      { "callingName": "Stake Audit Committee Chairman",
-        "positionId": 1276
-      },
-      { "callingName": "Stake Audit Committee Member",
-        "positionId": 1836
-      },
-      { "callingName": "Stake Audit Committee Member",
-        "positionId": 1836
-      }
-    ]
-  , 717: [
-      { "callingName": "Advisor",
-        "positionId": 999999
-      },
-      { "callingName": "Advisor",
-        "positionId": 999999
-      },
-      { "callingName": "Advisor",
-        "positionId": 999999
-      }
-    ]
-  , 1300: [
-      { "callingName": "Stake Music Chairman",
-        "positionId": 728
-      }
-    ]
-  , 1280: [
-      { "callingName": "Stake Activities Committee Chairman",
-        "positionId": 720
-      }
-    ]
-  };
+  function getStakeLeadershipGroup() {
+    return {
+      1186: [
+        { "callingName": "Stake President",
+          "positionId": 1
+        },
+        { "callingName": "Stake Presidency First Counselor",
+          "positionId": 2
+        },
+        { "callingName": "Stake Presidency Second Counselor",
+          "positionId": 3
+        },
+        { "callingName": "Stake Executive Secretary",
+          "positionId": 51
+        },
+        { "callingName": "Stake Clerk",
+          "positionId": 52
+        },
+        { "callingName": "Stake Assistant Clerk",
+          "positionId": 53
+        },
+        { "callingName": "Stake Assistant Executive Secretary",
+          "positionId": 491
+        }
+      ]
+    , 1189: [
+        { "callingName": "Stake High Councilor",
+          "positionId": 94
+        },
+        { "callingName": "Stake High Councilor",
+          "positionId": 94
+        }
+      ]
+    , 1190: [
+        { "callingName": "Patriarch",
+          "positionId": 13
+        }
+      ]
+    , 1281: [
+        { "callingName": "Stake Auditor",
+          "positionId": 691
+        },
+        { "callingName": "Stake Auditor",
+          "positionId": 691
+        },
+        { "callingName": "Stake Auditor",
+          "positionId": 691
+        },
+        { "callingName": "Stake Audit Committee Chairman",
+          "positionId": 1276
+        },
+        { "callingName": "Stake Audit Committee Member",
+          "positionId": 1836
+        },
+        { "callingName": "Stake Audit Committee Member",
+          "positionId": 1836
+        }
+      ]
+    , 717: [
+        { "callingName": "Advisor",
+          "positionId": 999999
+        },
+        { "callingName": "Advisor",
+          "positionId": 999999
+        },
+        { "callingName": "Advisor",
+          "positionId": 999999
+        }
+      ]
+    , 1300: [
+        { "callingName": "Stake Music Chairman",
+          "positionId": 728
+        }
+      ]
+    , 1280: [
+        { "callingName": "Stake Activities Committee Chairman",
+          "positionId": 720
+        }
+      ]
+    };
+  }
 
   function getWardLeadershipPositions(wardName) {
     return {
@@ -2507,17 +2509,19 @@
     });
   }
 
-  function getUniverse(username, things) {
+  function getUniverse(username, areaInfo) {
     var cache = {}
-      , groupLeaders
       ;
 
-    cache['/unit/current-user-units/'] = getAvailableUnits(things);
-    cache['/unit/current-user-ward-stake/'] = getCurrentUnits(things);
+    cache['/unit/current-user-units/'] = getAvailableUnits(areaInfo);
+    cache['/unit/current-user-ward-stake/'] = getCurrentUnits(areaInfo);
     cache['/mem/current-user-id/'] = username; // backwards compat
     cache['/mem/current-user-info/'] = { individualId: username, newOption2Member: false };
 
-    things.stakes.forEach(function (stakeInfo) {
+    areaInfo.stakes.forEach(function (stakeInfo) {
+      var groupLeaders = getStakeLeadershipGroup()
+        ;
+
       stakeInfo.members = [];
 
       cache['/1.1/unit/stake-leadership-positions/' + stakeInfo.stakeUnitNo]
@@ -2532,10 +2536,9 @@
       });
 
       stakeInfo.callable = stakeInfo.members.slice(0).sort(function () { return 0.5 - Math.random(); });
-      groupLeaders = clone(groupLeadersTpl);
       cache['/1.1/unit/stake-leadership-positions/' + stakeInfo.stakeUnitNo]
         .unitLeadership.forEach(getStakeLeadership.bind(null, cache, groupLeaders, stakeInfo));
-      // getStakeLeadership(cache, groupLeaders, stakeInfo, group) {
+        // getStakeLeadership(cache, groupLeaders, stakeInfo, group) {
 
 
       stakeInfo.wards.forEach(function (wardInfo) {
@@ -2545,21 +2548,21 @@
             ;
 
           //cache['/mem/householdProfile/' + c.id] = mapFlatToHousehold(c, address, areaInfo, stakeInfo, wardInfo);
-          cache['/mem/householdProfile/' + c.id] = mapFlatToHousehold(c, address, things, things, things);
+          cache['/mem/householdProfile/' + c.id] = mapFlatToHousehold(c, address, areaInfo, stakeInfo, wardInfo);
         });
 
         //
         // photos
         //
         wardInfo.members.forEach(function (c) {
-          cache['/mem/wardDirectory/photos/' + things.wardUnitNo].push(mapFlatToPhotos(c));
+          cache['/mem/wardDirectory/photos/' + wardInfo.wardUnitNo].push(mapFlatToPhotos(c));
         });
 
         //
         // member-list
         //
         wardInfo.members.forEach(function (c) {
-          cache['/mem/member-list/' + things.wardUnitNo].push(mapFlatToMemberList(c));
+          cache['/mem/member-list/' + wardInfo.wardUnitNo].push(mapFlatToMemberList(c));
         });
 
         Object.keys(organizations).forEach(function (key) {
@@ -2582,7 +2585,7 @@
             members = [];
           }
 
-          cache["/1.1/unit/roster/" + things.wardUnitNo + '/' + organizationName] = members.map(function (m) {
+          cache["/1.1/unit/roster/" + wardInfo.wardUnitNo + '/' + organizationName] = members.map(function (m) {
             return {
               "birthdate": null,
               "directoryName": m.last + ', ' + m.first,
@@ -2599,13 +2602,13 @@
           });
         });
 
-        cache["/1.1/unit/ward-leadership-positions/" + things.wardUnitNo + "/true"] = getWardLeadershipPositions(things.wardName);
+        cache["/1.1/unit/ward-leadership-positions/" + wardInfo.wardUnitNo + "/true"] = getWardLeadershipPositions(wardInfo.wardName);
 
-        cache["/1.1/unit/ward-leadership-positions/" + things.wardUnitNo + "/true"].wardLeadership.forEach(function (group) {
+        cache["/1.1/unit/ward-leadership-positions/" + wardInfo.wardUnitNo + "/true"].wardLeadership.forEach(function (group) {
           // no idea why these seem to be duplicates of each other...
           group.sortedPositions = group.positions;
         });
-        cache["/1.1/unit/ward-leadership-positions/" + things.wardUnitNo + "/true"].unitLeadership.forEach(function (group) {
+        cache["/1.1/unit/ward-leadership-positions/" + wardInfo.wardUnitNo + "/true"].unitLeadership.forEach(function (group) {
           var leaders = group.leaders.slice(0)
             ;
 
@@ -2618,14 +2621,14 @@
           // this seems to imply that a wardUnitNo
           // will never be the same as a stakeUnitNo
           cache['/1.1/unit/stake-leadership-group-detail/'
-            + things.wardUnitNo + '/'
+            + wardInfo.wardUnitNo + '/'
             + group.groupKey + '/'
               // some provo wards have two relief societies
               // I think that's what the instance is for
             + group.instance
           ] = { 
             leaders: group.leaders
-          , unitName: things.wardName
+          , unitName: wardInfo.wardName
           };
           group.leaders.forEach(function (leader) {
             var gender = null
