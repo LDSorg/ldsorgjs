@@ -7,7 +7,7 @@ All of the data is exactly the same with one exception: pictures are included in
 Installation
 ===
 
-Note that `hogwarts.js` is for testing and thus optional.
+Note that `hogwarts.js` is for testing and thus optional. If you use `hogwarts.js` you must also include `chance.js`.
 
 node.js
 ---
@@ -20,7 +20,7 @@ npm install ldsorg
 browser
 ---
 
-via bower
+### via bower
 
 ```bash
 bower install ldsorg
@@ -36,6 +36,7 @@ script(src="bower_components/ldsorgjs/stake.js")
 script(src="bower_components/ldsorgjs/browser.js")
 script(src="bower_components/ldsorgjs/ldsorg.js")
 script(src="bower_components/ldsorgjs/cache-browser.js")
+script(src="bower_components/chance/chance.js")
 script(src="bower_components/ldsorgjs/hogwarts.js")
 ```
 
@@ -49,10 +50,11 @@ script(src="bower_components/ldsorgjs/hogwarts.js")
 <script src="bower_components/ldsorgjs/browser.js"></script>
 <script src="bower_components/ldsorgjs/ldsorg.js"></script>
 <script src="bower_components/ldsorgjs/cache-browser.js"></script>
+<script src="bower_components/chance/chance.js"></script>
 <script src="bower_components/ldsorgjs/hogwarts.js"></script>
 ```
 
-via download
+### via download
 
 ```bash
 wget http://ldsorg.github.io/ldsorgjs/ldsorg.all.js
@@ -60,6 +62,7 @@ wget http://ldsorg.github.io/ldsorgjs/ldsorg.all.js
 
 ```html
 <script src="ldsorg.all.js"></script>
+<script src="bower_components/ldsorgjs/hogwarts.js"></script>
 <script src="bower_components/ldsorgjs/hogwarts.js"></script>
 ```
 

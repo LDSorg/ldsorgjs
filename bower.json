@@ -30,6 +30,7 @@
     "join": "~3.0.0",
     "lateral": "~3.0.5",
     "forEachAsync": "~3.0.0",
-    "forAllAsync": "~1.0.1"
+    "forAllAsync": "~1.0.1",
+    "chance": "~0.5.6"
   }
 }

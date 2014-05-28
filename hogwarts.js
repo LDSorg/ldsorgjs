@@ -10,18 +10,24 @@
     , guyPics = []
     , galPics = []
     , photoIndex = 0
+      // When using chance double check that you're not using Math.random(), new Date(), or Date.now()
+    , seed = 4273494341
+    , Chance = exports.Chance || require('chance').Chance
+    , chance = new Chance(seed)
+    , guyPhotoMax = 99
+    , galPhotoMax = 96
     ;
 
   function genGuyPhotoNums() {
     // men 0-99
-    for (photoIndex = 0; photoIndex < 99; photoIndex += 1) {
+    for (photoIndex = 0; photoIndex < guyPhotoMax; photoIndex += 1) {
       guyPics.push(photoIndex);
     }
   }
 
   function genGalPhotoNums() {
     // women 0-96
-    for (photoIndex = 0; photoIndex < 96; photoIndex += 1) {
+    for (photoIndex = 0; photoIndex < galPhotoMax; photoIndex += 1) {
       galPics.push(photoIndex);
     }
   }
@@ -30,33 +36,6 @@
     // 375, 150, 40
     return "http://images.coolaj86.com/api/resize/width/150?url="
       + encodeURIComponent(url);
-  }
-
-  // https://github.com/coolaj86/knuth-shuffle/blob/master/index.js
-  function shuffle(array) {
-    var currentIndex = array.length
-      , temporaryValue
-      , randomIndex
-      ;
-
-    // While there remain elements to shuffle...
-    while (0 !== currentIndex) {
-
-      // Pick a remaining element...
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex -= 1;
-
-      // And swap it with the current element.
-      temporaryValue = array[currentIndex];
-      array[currentIndex] = array[randomIndex];
-      array[randomIndex] = temporaryValue;
-    }
-
-    return array;
-  }
-
-  function badrand() {
-    return Math.random() - 0.5;
   }
 
   organizations = {
@@ -2207,7 +2186,7 @@
 
   // TODO allow number range
   function getRandomWardMembers(/*num*/) {
-    var genderedNames = shuffle(genderedNamesTpl.slice(0))
+    var genderedNames = chance.shuffle(genderedNamesTpl.slice(0))
       , flatMemberRecords = []
       ;
 
@@ -2215,8 +2194,9 @@
       var info = c.split(/:/)
         , names = (info[1] || info[0]).split(/ /g)
         , year = (365 * 24 * 60 * 60 * 1000)
-        , years18 = 18 * year
+        , years17 = 17 * year
         , years31 = 31 * year
+        , may27th2014 = 1401236687911
         , gender // = /(a|e|y)$/.test(names[0]) && 'MALE' || 'FEMALE' // meh, better than nothing
         , sex
         , photoNum
@@ -2232,7 +2212,7 @@
         photoNum = guyPics.pop();
       } else {
         gender = 'FEMALE';
-        if (!guyPics.length) {
+        if (!galPics.length) {
           genGalPhotoNums();
         }
         photoNum = galPics.pop();
@@ -2241,10 +2221,10 @@
       sex = ('MALE' === gender) ? 'men' : 'women';
 
       if ('number' === typeof photoNum) {
-        if (Math.random() > 0.3) {
+        if (chance.natural({ min: 0, max: 9 }) > 3) {
           photoUrl = getCachedImage('http://api.randomuser.me/portraits/' + sex + '/' + photoNum + '.jpg');
         }
-        if (Math.random() > 0.1) {
+        if (chance.natural({ min: 0, max: 9 }) > 1) {
           photoUrl2 = getCachedImage('http://api.randomuser.me/portraits/' + sex + '/' + photoNum + '.jpg');
         }
       }
@@ -2254,11 +2234,15 @@
       , first: names[0]
       , last: names[names.length - 1]
       , gender: gender 
-      , birthday: Date.now() - (Math.floor(Math.random() * years31) + years18)
-      , email: (Math.random() > 0.3) && (names[1] + '.' + names[0] + '@example.com') || undefined
-      , email2: (Math.random() > 0.2) && (names[1] + '_' + names[0] + '@test.net') || undefined
-      , phone: (Math.random() > 0.3) && ('1 (555) ' + String(Math.random()).replace(/.*(\d{7})/, '$1')) || undefined
-      , phone2: (Math.random() > 0.2) && ('1 (555) ' + String(Math.random()).replace(/.*(\d{7})/, '$1')) || undefined
+      , birthday: may27th2014 - chance.natural({ min: years17, max: years31 })
+      , email: (chance.natural({ min: 0, max: 9 }) > 3)
+                && (names[1] + '.' + names[0] + '@example.com') || undefined
+      , email2: (chance.natural({ min: 0, max: 9 }) > 2)
+                && (names[1] + '_' + names[0] + '@test.net') || undefined
+      , phone: (chance.natural({ min: 0, max: 9 }) > 3)
+                && ('1 (555) ' + chance.phone().replace(/.*\)\s*/, '')) || undefined
+      , phone2: (chance.natural({ min: 0, max: 9 }) > 2)
+                && ('1 (555) ' + chance.phone().replace(/.*\)\s*/, '')) || undefined
       , photoNum: photoNum
       , photoNum2: photoNum
       , photoUrl: photoUrl
@@ -2267,9 +2251,9 @@
 
       if (!photoUrl && !photoUrl2) {
         if ('MALE' === gender) {
-          guyPics.push(photoUrl);
+          guyPics.push(photoNum);
         } else {
-          galPics.push(photoUrl);
+          galPics.push(photoNum);
         }
       }
     });
@@ -2488,7 +2472,7 @@
       while (!person || (gender && (person.gender !== gender))) {
         person = stakeInfo.callable.pop();
         if (!person || i > 20) {
-          stakeInfo.callable = stakeInfo.members.slice(0).sort(badrand);
+          stakeInfo.callable = chance.shuffle(stakeInfo.members.slice(0));
         } else {
           stakeInfo.callable.unshift(person);
         }
@@ -2532,7 +2516,7 @@
         stakeInfo.members = stakeInfo.members.concat(wardInfo.members);
       });
 
-      stakeInfo.callable = stakeInfo.members.slice(0).sort(function () { return 0.5 - Math.random(); });
+      stakeInfo.callable = chance.shuffle(stakeInfo.members.slice(0));
       cache['/1.1/unit/stake-leadership-positions/' + stakeInfo.stakeUnitNo]
         .unitLeadership.forEach(getStakeLeadership.bind(null, cache, groupLeaders, stakeInfo));
         // getStakeLeadership(cache, groupLeaders, stakeInfo, group) {
@@ -2541,7 +2525,10 @@
       stakeInfo.wards.forEach(function (wardInfo) {
         // household
         wardInfo.members.forEach(function (c) {
-          var address = (('MALE' === c.gender) ? 750 : 754) + " W 1700 N Apt " + (Math.floor(Math.random() * 30) + 1)
+          var address = (('MALE' === c.gender) ? 750 : 754) + " W 1700 N Apt "
+            + chance.natural({ min: 1, max: 4 })
+            + chance.natural({ min: 0, max: 4 })
+            + chance.natural({ min: 0, max: 9 })
             ;
 
           //cache['/mem/householdProfile/' + c.id] = mapFlatToHousehold(c, address, areaInfo, stakeInfo, wardInfo);
@@ -2645,7 +2632,7 @@
             while (!person || (gender && person.gender !== gender)) {
               person = stakeInfo.callable.pop();
               if (!person || i > 20) {
-                stakeInfo.callable = stakeInfo.members.slice(0).sort(badrand);
+                stakeInfo.callable = chance.shuffle(stakeInfo.members.slice(0));
               } else {
                 stakeInfo.callable.unshift(person);
               }

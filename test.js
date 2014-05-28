@@ -34,6 +34,19 @@
     ldsorg.getCurrentStake().getAll(function () {
       console.log('got current stake', ((Date.now() - ts) / 1000).toFixed(2) + 's');
     });
+    /*
+    ldsorg.getStake('middleearth').getAll(function () {
+      console.log('got middleearth stake', ((Date.now() - ts) / 1000).toFixed(2) + 's');
+    });
+    ldsorg.getStake('middleearth').getWard('rivendell').getAll(function () {
+      console.log('got shire ward', ((Date.now() - ts) / 1000).toFixed(2) + 's');
+      ldsorg.getStake('middleearth').getWard('rivendell').getAll(function () {
+        console.log('got shire ward with emails (and photos)', ((Date.now() - ts) / 1000).toFixed(2) + 's');
+        return;
+      }, { fullHouseholds: true });
+    }, { fullHouseholds: true });
+    */
+
     ldsorg.getCurrentStake().getCurrentWard().getAll(function () {
       console.log('got current ward', ((Date.now() - ts) / 1000).toFixed(2) + 's');
       ldsorg.getCurrentStake().getCurrentWard().getAll(function () {

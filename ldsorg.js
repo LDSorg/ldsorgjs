@@ -391,7 +391,9 @@
       if (exports.window) {
         exports.window.alert("You are using a demo account. Welcome to Hogwarts!");
       }
-      console.info('Welcome to Hogwarts! ;-)');
+      if (!this._hogwarts) {
+        console.info('Welcome to Hogwarts! ;-)');
+      }
       this._hogwarts = true;
       cb(null);
       return;
@@ -436,7 +438,11 @@
     }
 
     if (this._hogwarts) {
-      me._makeRequest = (exports.Hogwarts || require('./hogwarts').Hogwarts).makeRequest;
+      if (!this._hogwartsBackend) {
+        this._hogwartsBackend = (exports.Hogwarts || require('./hogwarts').Hogwarts).create();
+        require('fs').writeFileSync('./hogwarts.cache', JSON.stringify(this._hogwartsBackend.cache, null, '  '));
+      }
+      me._makeRequest = this._hogwartsBackend.makeRequest;
     }
 
     // I think the lds.org timeout is about 15 to 30 minutes of inactivity, not entirely sure
@@ -453,15 +459,6 @@
       ;
 
     if (this._hogwarts) {
-      // http://carlo.zottmann.org/2013/04/14/google-image-resizer/
-      imgSrc = 'https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy'
-        + '?url=' + encodeURIComponent(imgSrc)
-        + '&container=focus'
-        + '&resize_w=100'
-        + '&resize_h=100'
-        + '&refresh=259200'
-        ;
-
       this._getImageData(next, imgSrc);
       return;
     }

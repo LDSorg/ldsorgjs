@@ -1,6 +1,6 @@
 {
   "name": "ldsorg",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "description": "A JavaScript library for accessing LDS.org with Node.js or a browser",
   "main": "ldsorg.js",
   "scripts": {
@@ -18,7 +18,8 @@
     "lateral": "~3.0.5"
   },
   "devDependencies": {
-    "request": "~2.33.0"
+    "request": "~2.33.0",
+    "chance": "~0.5.6"
   },
   "keywords": [
     "ysa",
