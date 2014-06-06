@@ -6,7 +6,7 @@ All of the data is exactly the same with one exception: pictures are included in
 
 Questions? Comments?
 Leave [an issue](https://github.com/LDSorg/ldsorgjs/issues/new)
-or join the discussion on [https://groups.google.com/forum/#!forum/lds-connect](Google Groups)
+or join the discussion on [Google Groups](https://groups.google.com/forum/#!forum/lds-connect)
 
 Installation
 ===
