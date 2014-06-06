@@ -4,6 +4,10 @@ ldsorg.js
 This is a thin layer over the LDS.org api.
 All of the data is exactly the same with one exception: pictures are included in calls to individuals and households.
 
+Questions? Comments?
+Leave [an issue](https://github.com/LDSorg/ldsorgjs/issues/new)
+or join the discussion on [https://groups.google.com/forum/#!forum/lds-connect](Google Groups)
+
 Installation
 ===
 
