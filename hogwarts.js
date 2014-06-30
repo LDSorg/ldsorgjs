@@ -2302,7 +2302,8 @@
           "userHasStakeAdminRights": false,
           "userHasWardAdminRights": false,
           "userHasWardCalling": false,
-          "usersHomeWard": true,
+          "usersHomeWard": areaInfo.stakeUnitNo === stakeInfo.stakeUnitNo
+            && wardInfo.wardUnitNo === areaInfo.wardUnitNo,
           "ward": true,
           "wardName": wardInfo.wardName,
           "wardUnitNo": wardInfo.wardUnitNo
@@ -2316,6 +2317,7 @@
         "stakeName": stakeInfo.stakeName,
         "stakeUnitNo": stakeInfo.stakeUnitNo,
         "userHasStakeAdminRights": false,
+        // TODO "usersHomeStake": areaInfo.stakeUnitNo === stakeInfo.stakeUnitNo,
         "wards": wards
       });
     });
