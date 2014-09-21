@@ -18,7 +18,6 @@
           if (!data.foo) {
             throw new Error('missing value that was just saved');
           }
-          console.log(data);
         });
       });
     });
@@ -34,7 +33,6 @@
           if (!data.foo) {
             throw new Error('missing value that was just saved');
           }
-          console.log(data);
         });
       });
     });
@@ -42,12 +40,9 @@
 
   testAlone()
     .then(function () {
-      console.log('Tested by itself');
-    })
-    .then(function () {
       return testWithWard();
     }).then(function () {
-      console.log('Tested with ward');
+      console.log('SUCCESS');
       process.exit();
     })
     ;

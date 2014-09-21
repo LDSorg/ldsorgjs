@@ -4,7 +4,8 @@
 
   var LdsOrgNode = { init: function (LdsDir, ldsDirP) {
 
-    var request = require('request')
+    var PromiseA = require('bluebird').Promise
+      , request = PromiseA.promisifyAll(require('request'))
       ;
 
     ldsDirP._signin = function (cb, auth) {
@@ -12,8 +13,11 @@
         ;
 
       me.__jar = request.jar();
-      request.post('https://signin.lds.org/login.html', {
+      me.__pool = { maxSockets: 1000 };
+      request.post(
+        'https://signin.lds.org/login.html', {
         jar: me.__jar
+      , pool: me.__pool
       , form: {
           username: auth.username
         , password: auth.password
@@ -38,44 +42,51 @@
         cb(null);
       });
     };
-    ldsDirP._signout = function (cb) {
+    ldsDirP._signout = function () {
       var me = this
         , url = 'https://www.lds.org/signinout/?lang=eng&signmeout'
         ;
 
-      request.get(url, { jar: me.__jar }, function (/*err, res, body*/) {
-        me.__jar = null;
-        cb(null);
+      return new PromiseA(function (resolve) {
+        // TODO is there any real purpose in hitting the url?
+        // doesn't it just tell the browser to delete the cookies?
+        request.get(url, { jar: me.__jar }, function (/*err, res, body*/) {
+          me.__jar = null;
+          resolve();
+        });
       });
     };
 
-    ldsDirP._makeRequest = function (cb, url) {
+    ldsDirP._makeRequest = function (url) {
       var me = this
         ;
 
-      request.get(url, {
-        jar: me.__jar
-      }, function (err, res, body) {
-        var data
-          ;
+      return new PromiseA(function (resolve, reject) {
+        request.get(url, {
+          jar: me.__jar
+        , pool: me.__pool
+        }, function (err, res, body) {
+          var data
+            ;
 
-        if (err) {
-          cb(err);
-          return;
-        }
+          if (err) {
+            return reject(err);
+          }
 
-        try {
-          data = JSON.parse(body);
-        } catch(e) {
-          console.log(url);
-          console.error(e);
-          console.log('typeof body:', typeof body);
-          console.log('JSON.stringify(body)');
-          console.log(JSON.stringify(String(body).substr(0, 100)));
-          err = e;
-        }
+          try {
+            data = JSON.parse(body);
+          } catch(e) {
+            console.log(url);
+            console.error(e);
+            console.log('typeof body:', typeof body);
+            console.log('JSON.stringify(body)');
+            console.log(JSON.stringify(String(body).substr(0, 100)));
+            err = e;
+            return reject(err);
+          }
 
-        cb(err, data);
+          resolve(data);
+        });
       });
     };
 
@@ -89,14 +100,23 @@
       }
 
       // encoding is utf8 by default
-      request.get(imgSrc, { jar: me.__jar, encoding: null }, function (err, res, body) {
-        // TODO inspect res.status or res.statusCode or whatever
-        if (body.length < 1024) {
-          next(new Error("404"));
-          return;
+      request.get(
+        imgSrc
+      , { 
+          jar: me.__jar
+        , pool: me.__pool
+        , encoding: null
         }
-        next(err, body && ('data:image/jpeg;base64,' + body.toString('base64')) || "");
-      });
+      , function (err, res, body) {
+          // TODO inspect res.status or res.statusCode or whatever
+          if (body && body.length < 1024) {
+            next(new Error("404"));
+            return;
+          }
+
+          next(err, body && ('data:image/jpeg;base64,' + body.toString('base64')) || "");
+        }
+      );
     };
   }};
 

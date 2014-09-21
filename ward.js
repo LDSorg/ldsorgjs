@@ -2,6 +2,9 @@
 ;(function (exports) {
   'use strict';
 
+  var PromiseA = exports.P || require('bluebird').Promise
+    ;
+
   exports.LdsOrgWard = { init: function (LdsOrg) {
 
     function LdsWard(opts, ldsOrg, ldsStake) {
@@ -40,9 +43,12 @@
 
     ldsWardP.init = function (cb) {
       var me = this
+        , p
         ;
 
-      me._store.init(cb);
+      p = me._store.init();
+      p.then(cb);
+      return p;
     };
 
 
@@ -54,32 +60,36 @@
         ;
 
       me._emit('wardMemberListInit');
-      LdsOrg._getJSON(
-        function (err, list) {
-          me._emit('wardMemberList', list);
-          fn(list);
-        }
-      , { url: LdsOrg.getMemberListUrl(me._wardUnitNo)
+
+      return LdsOrg._getJSON(
+        { url: LdsOrg.getMemberListUrl(me._wardUnitNo)
         , store: me._store
         , cacheId: 'member-list'
         , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me }
-      );
+      ).then(function (list) {
+        me._emit('wardMemberList', list);
+        fn(list);
+
+        return list;
+      });
     };
     ldsWardP.getPhotoList = function (fn) {
       var me = this
         ;
 
       me._emit('wardPhotoDirectoryInit');
-      LdsOrg._getJSON(
-        function (err, list) {
-          me._emit('wardPhotoDirectory', list);
-          fn(list);
-        }
-      , { url: LdsOrg.getPhotosUrl(me._wardUnitNo)
+
+      return LdsOrg._getJSON(
+        { url: LdsOrg.getPhotosUrl(me._wardUnitNo)
         , store: me._store
         , cacheId: 'photo-list'
         , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me }
-      );
+      ).then(function (list) {
+        me._emit('wardPhotoDirectory', list);
+        fn(list);
+
+        return list;
+      });
     };
     ldsWardP.getOrganization = function (fn, orgname) {
       var me = this
@@ -87,48 +97,54 @@
         ;
 
       me._emit('wardOrganizationInit', me._wardUnitNo, orgname.toLowerCase());
-      LdsOrg._getJSON(
-        function (err, orgs) {
-          me._emit('wardOrganization', me._wardUnitNo, orgnameL, orgs);
-          fn(orgs);
-        }
-      , { url: LdsOrg.getWardOrganizationUrl(me._wardUnitNo, orgname)
+
+      return LdsOrg._getJSON(
+        { url: LdsOrg.getWardOrganizationUrl(me._wardUnitNo, orgname)
         , store: me._store
         , cacheId: orgnameL
         , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me }
-      );
+      ).then(function (orgs) {
+        me._emit('wardOrganization', me._wardUnitNo, orgnameL, orgs);
+        fn(orgs);
+
+        return orgs;
+      });
     };
     ldsWardP.getPositions = function (fn) {
       var me = this
         ;
 
       me._emit('wardPositionsInit', me._wardUnitNo);
-      LdsOrg._getJSON(
-        function (err, positionsWrapped) {
-          me._emit('wardPositions', me._wardUnitNo, positionsWrapped);
-          fn(positionsWrapped);
-        }
-      , { url: LdsOrg.getWardLeadershipPositionsUrl(me._wardUnitNo)
+
+      return LdsOrg._getJSON(
+        { url: LdsOrg.getWardLeadershipPositionsUrl(me._wardUnitNo)
         , store: me._store
         , cacheId: 'positions'
         , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me }
-      );
+      ).then(function (positionsWrapped) {
+        me._emit('wardPositions', me._wardUnitNo, positionsWrapped);
+        fn(positionsWrapped);
+
+        return positionsWrapped;
+      });
     };
     ldsWardP.getLeadership = function (fn, group) {
       var me = this
         ;
 
       me._emit('wardLeadershipInit', me._wardUnitNo, group.groupName);
-      LdsOrg._getJSON(
-        function (err, leadershipWrapped) {
-          me._emit('wardLeadership', me._wardUnitNo, group.groupName, leadershipWrapped);
-          fn(leadershipWrapped);
-        }
-      , { url: LdsOrg.getWardLeadershipGroupUrl(me._wardUnitNo, group.groupKey, group.instance)
+
+      return LdsOrg._getJSON(
+        { url: LdsOrg.getWardLeadershipGroupUrl(me._wardUnitNo, group.groupKey, group.instance)
         , store: me._store
         , cacheId: 'leadership-' + group.groupName
         , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me }
-      );
+      ).then(function (leadershipWrapped) {
+        me._emit('wardLeadership', me._wardUnitNo, group.groupName, leadershipWrapped);
+        fn(leadershipWrapped);
+
+        return leadershipWrapped;
+      });
     };
 
     //
@@ -302,65 +318,69 @@
         me.getHouseholds(fn, roster, opts);
       });
     };
-    ldsWardP.getAll = function (fn, opts) {
-      opts = opts || {};
-
+    ldsWardP.getAll = function (opts) {
       var me = this
-        , id = me._wardUnitNo
-        , join = Join.create()
-        , listJ = join.add()
-        , photoJ = join.add()
-        , orgsJ = join.add()
-        , callsJ = join.add()
         ;
 
-      me._emit('wardInit', id);
+      return new PromiseA(function (resolve) {
+        opts = opts || {};
 
-      function onResult(ward) {
-        me._emit('ward', id, ward);
-        me._emit('wardEnd', id);
-        fn(ward);
-      }
-
-      me.getOrganizations(function (orgs) {
-        orgsJ(null, orgs);
-      });
-
-      me.getCallings(function (callings) {
-        callsJ(null, callings);
-      });
-
-      me.getMemberList(function (list) {
-        listJ(null, list);
-      }, id);
-
-      me.getPhotoList(function (photos) {
-        photoJ(null, photos);
-      }, id);
-
-      join.then(function (memberListArgs, photoListArgs, orgsArgs, callsArgs) {
-        var memberList = memberListArgs[1]
-          , photoList = photoListArgs[1]
-          , organizations = orgsArgs[1]
-          , callings = callsArgs[1]
+        var id = me._wardUnitNo
+          , join = Join.create()
+          , listJ = join.add()
+          , photoJ = join.add()
+          , orgsJ = join.add()
+          , callsJ = join.add()
           ;
 
-        function sendStuff(households) {
-          onResult({
-            ward: me._meta
-          , members: memberList
-          , photos: photoList
-          , organizations: organizations
-          , callings: callings
-          , households: households
-          });
+        me._emit('wardInit', id);
+
+        function onResult(ward) {
+          me._emit('ward', id, ward);
+          me._emit('wardEnd', id);
+          resolve(ward);
         }
 
-        if (false === opts.fullHouseholds) {
-          sendStuff();
-        } else {
-          me.getRoster(sendStuff, opts);
-        }
+        me.getOrganizations(function (orgs) {
+          orgsJ(null, orgs);
+        });
+
+        me.getCallings(function (callings) {
+          callsJ(null, callings);
+        });
+
+        me.getMemberList(function (list) {
+          listJ(null, list);
+        }, id);
+
+        me.getPhotoList(function (photos) {
+          photoJ(null, photos);
+        }, id);
+
+        join.then(function (memberListArgs, photoListArgs, orgsArgs, callsArgs) {
+          var memberList = memberListArgs[1]
+            , photoList = photoListArgs[1]
+            , organizations = orgsArgs[1]
+            , callings = callsArgs[1]
+            ;
+
+          function sendStuff(households) {
+            onResult({
+              ward: me._meta
+            , members: memberList
+            , photos: photoList
+            , organizations: organizations
+            , callings: callings
+            , households: households
+            });
+          }
+
+          if (false === opts.fullHouseholds) {
+            sendStuff();
+          } else {
+            me.getRoster(sendStuff, opts);
+          }
+        });
       });
     };
 
@@ -378,25 +398,26 @@
 
       me._emit('householdInit', id);
 
-      LdsOrg._getJSON(
-        function (err, profile) {
-          if (err) {
-            console.error('[ERROR] getHousehold');
-            console.error(profileOrId);
-            console.error(err);
-            fn();
-            return;
-          }
-
-          me._emit('household', profile);
-          me._emit('householdEnd', profile);
-          fn(profile);
-        }
-      , { url: LdsOrg.getHouseholdUrl(id)
+      return LdsOrg._getJSON(
+        { url: LdsOrg.getHouseholdUrl(id)
         , store: me._store
         , cacheId: 'household-' + id
         , ldsOrg: me._ldsOrg, ldsStake: me._ldsStake, ldsWard: me, member: id }
-      );
+      ).catch(function (err) {
+        if (err) {
+          console.error('[ERROR] getHousehold');
+          console.error(profileOrId);
+          console.error(err);
+          fn();
+          return;
+        }
+      }).then(function (profile) {
+        me._emit('household', profile);
+        me._emit('householdEnd', profile);
+        fn(profile);
+
+        return profile;
+      });
     };
     ldsWardP.getHouseholdPhoto = function (fn, id, opts) {
       var me = this

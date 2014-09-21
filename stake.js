@@ -2,7 +2,8 @@
 ;(function (exports) {
   'use strict';
 
-  var forAllAsync = exports.forAllAsync || require('forallasync').forAllAsync
+  var PromiseA = exports.P || require('bluebird').Promise
+    , forAllAsync = exports.forAllAsync || require('forallasync').forAllAsync
     , LdsOrgStake = { init: function (LdsOrg, LdsWard) {
     function LdsStake(opts, ldsOrg) {
       var me = this
@@ -36,9 +37,12 @@
 
     LdsStake.prototype.init = function (cb) {
       var me = this
+        , p
         ;
 
-      me._store.init(cb);
+      p = me._store.init();
+      p.then(cb);
+      return p;
     };
 
     // Methods
@@ -46,17 +50,17 @@
       var me = this
         ;
 
+      // TODO pass an emitter with events
       me._emit('stakePositionsInit', me._stakeUnitNo);
       LdsOrg._getJSON(
-        function (err, data) {
-          me._emit('stakePositions', me._stakeUnitNo, data);
-          fn(data);
-        }
-      , { url: LdsOrg.getStakeLeadershipPositionsUrl(me._stakeUnitNo)
+        { url: LdsOrg.getStakeLeadershipPositionsUrl(me._stakeUnitNo)
         , store: me._store
         , cacheId: 'positions'
         , ldsOrg: me._ldsOrg, ldsStake: me }
-      );
+      ).then(function (data) {
+        me._emit('stakePositions', me._stakeUnitNo, data);
+        fn(data);
+      });
     };
     ldsStakeP.getLeadership = function (fn, group) {
       var me = this
@@ -64,15 +68,14 @@
 
       me._emit('stakeLeadershipInit', me._stakeUnitNo, group.groupName, group);
       LdsOrg._getJSON(
-        function (err, leadershipWrapped) {
-          me._emit('stakeLeadership', me._stakeUnitNo, group.groupName, leadershipWrapped);
-          fn(leadershipWrapped);
-        }
-      , { url: LdsOrg.getStakeLeadershipGroupUrl(me._stakeUnitNo, group.groupKey, group.instance)
+        { url: LdsOrg.getStakeLeadershipGroupUrl(me._stakeUnitNo, group.groupKey, group.instance)
         , store: me._store
         , cacheId: 'leadership-' + group.groupName
         , ldsOrg: me._ldsOrg, ldsStake: me }
-      );
+      ).then(function (leadershipWrapped) {
+        me._emit('stakeLeadership', me._stakeUnitNo, group.groupName, leadershipWrapped);
+        fn(leadershipWrapped);
+      });
     };
     ldsStakeP.getImages = function (fn, ids, sizes) {
       sizes = sizes || ['medium']; // large, medium, thumbnail
@@ -83,7 +86,11 @@
 
       //me._emit('images', me._stakeUnitNo, ids);
       LdsOrg._getJSON(
-        function (err, photoUrlMaps) {
+        { url: url
+        , store: me._store
+         // no cache for image urls
+        , ldsOrg: me._ldsOrg, ldsStake: me }
+      ).then(function (photoUrlMaps) {
           forAllAsync(photoUrlMaps, function (n, photoUrls) {
             photos[photoUrls.individualId] = {};
             forAllAsync(sizes, function (next, size) {
@@ -115,12 +122,7 @@
           }).then(function () {
             fn(photos);
           });
-        }
-      , { url: url
-        , store: me._store
-         // no cache for image urls
-        , ldsOrg: me._ldsOrg, ldsStake: me }
-      );
+        });
     };
 
 
@@ -173,35 +175,37 @@
     //
     // Stake
     //
-    ldsStakeP.getAll = function (fn, opts) {
-      // TODO get pictures using the individual photos feature
-      // /photo/url/#{id_1},#{id_2},#{id_x}/individual
+    ldsStakeP.getAll = function (opts) {
       var me = this
         ;
 
-      me._emit('stakeCallingsInit');
-      me.getPositions(function (_positions) {
-        var positions = _positions.unitLeadership || _positions.stakeLeadership
-          , groups = []
-          ;
+      return new PromiseA(function (resolve) {
+        // TODO get pictures using the individual photos feature
+        // /photo/url/#{id_1},#{id_2},#{id_x}/individual
+        me._emit('stakeCallingsInit');
+        me.getPositions(function (_positions) {
+          var positions = _positions.unitLeadership || _positions.stakeLeadership
+            , groups = []
+            ;
 
-        function gotAllCallings() {
-          me._emit('stakeCallings');
-          fn({
-            stake: me._meta
-          , callings: groups
-          });
-        }
+          function gotAllCallings() {
+            me._emit('stakeCallings');
+            return resolve({
+              stake: me._meta
+            , callings: groups
+            });
+          }
 
-        Lateral.create(function (next, group) {
-          me.getLeadership(function (list) {
-            group.leaders = list.leaders;
-            group.unitName = list.unitName;
-            groups.push(group);
-            next();
-          }, group);
-        }, nThreads).add(positions).then(gotAllCallings);
-      }, opts);
+          Lateral.create(function (next, group) {
+            me.getLeadership(function (list) {
+              group.leaders = list.leaders;
+              group.unitName = list.unitName;
+              groups.push(group);
+              next();
+            }, group);
+          }, nThreads).add(positions).then(gotAllCallings);
+        }, opts);
+      });
     };
 
     return LdsStake;

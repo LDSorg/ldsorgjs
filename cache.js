@@ -96,9 +96,10 @@
       return me._writep;
     }
 
-    if (me._writes && me._writes > 100) {
+    if (me._writes && me._writes > 1000) {
       return save();
     }
+    me._writes += 1;
 
     if (opts.immediate) {
       return save();
@@ -106,7 +107,7 @@
 
     return new PromiseA(function (resolve) {
       me._writet = setTimeout(function () {
-        resolve(save());
+        save().then(resolve);
       }, 30 * 1000);
     });
   };

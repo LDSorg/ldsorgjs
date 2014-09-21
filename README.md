@@ -100,40 +100,40 @@ Note: You can log in as the user `dumbledore` with any password and have access 
   ldsorg = LdsOrg.create({ node: isNode, Cache: Cache });
 
   // In the browser you must be already signed in
-  ldsorg.signin(
-    function (err) {
+  // in node you must supply the user / pass to sign in
+  ldsorg.signin({ username: username, password: password })
+    .then(function () {
       console.log('sign-in complete');
-      if (err) {
-        console.log('failed', err);
-        return;
+
+      function notify(event/*, a, b, c, d*/) {
+        console.log('[LOG]', event);
+        // build a nice big switch statement
       }
 
-      ldsorg.init(
-        function () {
-          console.log('User Meta Data Gathered', ((Date.now() - ts) / 1000).toFixed(2) + 's');
+      return ldsorg.init(notify, { node: isNode });
+    })
+    .catch(function (err) {
+      console.error('Sign In or Init Failed:');
+      throw err;
+    })
+    .then(function () {
+      console.log('User Meta Data Gathered', ((Date.now() - ts) / 1000).toFixed(2) + 's');
 
-          ldsorg.getCurrentStake().getAll(function () {
-            console.log(
-              'All stake-level data (not including wards) is now cached'
-            , ((Date.now() - ts) / 1000).toFixed(2) + 's'
-            );
-          });
-          ldsorg.getCurrentStake().getCurrentWard().getAll(function () {
-            console.log(
-              'All ward-level data is now cache'
-            , ((Date.now() - ts) / 1000).toFixed(2) + 's'
-            );
-          });
-        }
-      , function log(event/*, a, b, c, d*/) {
-          console.log('[LOG]', event);
-          // build a nice big switch statement
-        }
-      , { node: isNode }
-      );
-    }
-    // in node you must supply the user / pass to sign in
-  , { username: username, password: password }
+      ldsorg.getCurrentStake().getAll().then(function () {
+        console.log(
+          'All stake-level data (not including wards) is now cached'
+        , ((Date.now() - ts) / 1000).toFixed(2) + 's'
+        );
+      });
+
+      ldsorg.getCurrentStake().getCurrentWard().getAll().then(function () {
+        console.log(
+          'All ward-level data is now cache'
+        , ((Date.now() - ts) / 1000).toFixed(2) + 's'
+        );
+      });
+    });
+    ;
   );
 
 }('undefined' !== typeof exports && exports || new Function('return this')()));
@@ -149,11 +149,9 @@ TODO list respective urls and link to examples on ldsorg-api-documentation repo
 ### LdsOrg
 
   * LdsOrg.create(opts) - returns an LdsOrg instance
-  * #signin(cb, { username: 'u', password: 'p'}) - cb when signin is complete
-    * cb is a function `function (err) {}`
-    * auth is an object `{ username: 'johndoe', password: 'secret' }`
-  * #signout(cb)
-  * #init(cb, emitFn) - cb when init is complete. emitFn(eventname, arg1, arg2, ...) for each event
+  * #signin({ username: 'dumbledore', password: 'secret'}) - returns Promise
+  * #signout() - returns Promise
+  * #init(notifiable) - returns Promise for completion. `notifiable(eventname, arg1, arg2, ...)` is called for each event
   * #getCurrentUserId(fn)
   * #getCurrentUnits(fn)
   * #getCurrentStakes(fn)
@@ -178,7 +176,7 @@ TODO list respective urls and link to examples on ldsorg-api-documentation repo
   * #getWard(wardUnitNo) - returns an LdsWard instance
   * #getCurrentWard() - returns an LdsWard instance
   * #getWards(fn, wardsOrIds, opts)
-  * #getAll(fn)
+  * #getAll(opts) - returns Promise (does not include all wards)
 
 ### LdsWard
 
@@ -193,7 +191,7 @@ TODO list respective urls and link to examples on ldsorg-api-documentation repo
   * #getOrganizations(fn, orgnames)
   * #getCallings(fn)
   * #getHouseholds(fn, households, opts)
-  * #getAll(fn, opts)
+  * #getAll(opts) - returns Promise
   * #getHousehold(fn, profileOrId)
   * #getHouseholdPhoto(fn, id)
   * #getIndividualPhoto(fn, id)

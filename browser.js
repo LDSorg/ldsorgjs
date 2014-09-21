@@ -5,9 +5,10 @@
   var LdsOrgBrowser = { init: function (LdsDir, ldsDirP) {
 
     var $ = exports.jQuery || require('jquery')(window)
+      , PromiseA = exports.P || require('bluebird').Promise
       ;
 
-    ldsDirP._signin = function (cb, auth) {
+    ldsDirP._signin = function (auth) {
       // TODO POST form to iframe
       var //me = this
           signinWin
@@ -40,37 +41,39 @@
       }
 
       function getLoginStatus() {
-        var $events = $('body')
-          ;
+        return new Promise(function (resolve) {
+          var $events = $('body')
+            ;
 
-        $.ajax(
-          {
-            //url: me._ludrsUserId
-            url: 'https://www.lds.org/directory/'
-          , success: function () {
-              $('.js-login').hide();
-              $events.off('click', '.js-signin-link', openAuthWin);
-              closeSigninWin();
-              console.log('finally authenticated');
-              cb(null);
-            }
-          , error: function () {
-              console.log('waiting for authentication...');
-              if (!signinWin) {
-                $('.js-login').show();
-                $events.on('click', '.js-signin-link', openAuthWin);
-              } else {
-                setTimeout(getLoginStatus, 1000);
+          $.ajax(
+            {
+              //url: me._ludrsUserId
+              url: 'https://www.lds.org/directory/'
+            , success: function () {
+                $('.js-login').hide();
+                $events.off('click', '.js-signin-link', openAuthWin);
+                closeSigninWin();
+                console.log('finally authenticated');
+                resolve(null);
+              }
+            , error: function () {
+                console.log('waiting for authentication...');
+                if (!signinWin) {
+                  $('.js-login').show();
+                  $events.on('click', '.js-signin-link', openAuthWin);
+                } else {
+                  setTimeout(getLoginStatus, 1000);
+                }
               }
             }
-          }
-        );
+          );
+        });
       }
 
-      getLoginStatus();
+      return getLoginStatus();
     };
-    ldsDirP._signout = function (cb) {
-      $.get('https://www.lds.org/signinout/?lang=eng&signmeout').then(cb);
+    ldsDirP._signout = function () {
+      return $.get('https://www.lds.org/signinout/?lang=eng&signmeout');
     };
 
     ldsDirP._makeRequest = function (cb, url) {

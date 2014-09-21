@@ -2,7 +2,8 @@
 (function (exports) {
   'use strict';
 
-  var Hogwarts = {}
+  var PromiseA = exports.P || require('bluebird').Promise
+    , Hogwarts = {}
     , singleton 
     , defaults
     , genderedNamesTpl
@@ -2706,11 +2707,11 @@
   };
 
   // TODO simulate user log out
-  Hogwarts.makeRequest = function (cb, url) {
+  Hogwarts.makeRequest = function (url) {
     if (!singleton) {
       singleton = Hogwarts.create(defaults.name, defaults.units);
     }
-    singleton.makeRequest(cb, url);
+    return singleton.makeRequest(url);
   };
 
   Hogwarts.create = function (name, units) {
@@ -2718,15 +2719,10 @@
       ;
 
     return {
-      makeRequest: function (cb, url) {
-        var global = new Function('return this')()
-          , defer = global.setImmediate || global.setTimeout
-          ;
-
+      makeRequest: function (url) {
         url = url.replace('https://www.lds.org/directory/services/ludrs', '');
-        defer(function () {
-          cb(null, myUniverse[url]);
-        }, 0);
+
+        return PromiseA.resolve(myUniverse[url]);
       }
     , cache: myUniverse
     };

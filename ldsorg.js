@@ -3,6 +3,7 @@
   'use strict';
 
   var forEachAsync = exports.forEachAsync || require('foreachasync').forEachAsync
+    , PromiseA = require('bluebird').Promise
     ;
 
   function LdsOrg(opts) {
@@ -227,7 +228,7 @@
   // TODO abstract requests??
   // get cb, abstractUrl, { individualId: 123456 }, { cacheable: "cache://pic/:id", contentType: 'image' }
   // maybe use String.supplant?
-  LdsOrg._getJSON = function (cb, opts) {
+  LdsOrg._getJSON = function (opts) {
     //opts = opts || {};
 
     // opts.cacheId
@@ -238,56 +239,70 @@
     // opts.store
     // opts.ldsOrg
 
-    function respondWithCache(err, data) {
+    function respondWithCache(data) {
       var stale = true
         // , useless // TODO determine if it's way too stale
         , promiseId = opts.cacheId || opts.url
+        , p
         ;
 
       // respond with the old data, but queue up new data in the background
       if (data) {
         stale = (Date.now() - data.updatedAt) < (opts.keepAlive || defaultKeepAlive);
+
         if (!(opts.noCache || opts.expire)) {
-          cb(null, data.value);
-          cb = function () {};
+          return PromiseA.resolve(data.value);
         }
+
         if (!stale) {
+          // if it is stale we should continue to do other things
           return;
         }
       }
 
-      // poor-man's promises
+      // keep around the promise for this request in case it is made
+      // multiple times before it is fulfilled
       if (opts.ldsOrg._promises[promiseId]) {
-        opts.ldsOrg._promises[promiseId].push(cb);
-        return;
+        p = opts.ldsOrg._promises[promiseId];
       } else {
-        opts.ldsOrg._promises[promiseId] = [cb];
+        p = opts.ldsOrg._promises[promiseId] = opts.ldsOrg.makeRequest(opts.url)
+          .then(function (data) {
+            delete opts.ldsOrg._promises[promiseId];
+            return data;
+          })
+          .catch(function (err) {
+            delete opts.ldsOrg._promises[promiseId];
+            throw err;
+          })
+          ;
       }
-
-      opts.ldsOrg.makeRequest(function (err, _data) {
-        if (_data && opts.cacheId && !opts.noCache) {
+      
+      return p.then(function (_data) {
+        if (opts.cacheId && !opts.noCache) {
           var obj = { _id: opts.cacheId, updatedAt: Date.now(), value: _data };
           obj._rev = (_data || {})._rev;
-          opts.store.put(function () {}, opts.cacheId, obj);
-        }
 
-        opts.ldsOrg._promises[promiseId].forEach(function (cb) {
-          cb(err, _data);
-        });
-        delete opts.ldsOrg._promises[promiseId];
-      }, opts.url);
+          return opts.store.put(opts.cacheId, obj).then(function () {
+            return obj.value;
+          });
+        }
+      }).catch(function (err) {
+        console.error(err);
+        throw err;
+      });
     }
 
     // TODO cache here by url
     // TODO assume base
     if (opts.cacheId) {
-      opts.store.get(respondWithCache, opts.cacheId);
+      return opts.store.get(opts.cacheId).then(respondWithCache);
     } else {
-      respondWithCache();
+      return respondWithCache();
     }
   };
+
   LdsOrg._getImage = function (cb, opts) {
-    function respondWithCache(err, data) {
+    function respondWithCache(data) {
       var stale = true
         // , useless // TODO determine if it's way too stale
         , promiseId = opts.cacheId || opts.url
@@ -299,6 +314,7 @@
         if (!(opts.noCache || opts.expire)) {
           cb(null, data.value);
           cb = function () {};
+          return PromiseA.resolve(data.value);
         }
         if (!stale) {
           return;
@@ -317,7 +333,7 @@
         if (_data && opts.cacheId && !opts.noCache) {
           var obj = { _id: opts.cacheId, updatedAt: Date.now(), value: _data };
           obj._rev = (_data || {})._rev;
-          opts.store.put(function () {}, opts.cacheId, obj);
+          opts.store.put(opts.cacheId, obj);
         }
 
         opts.ldsOrg._promises[promiseId].forEach(function (cb) {
@@ -329,7 +345,7 @@
 
     // TODO cache here by url
     // TODO assume base
-    opts.store.get(respondWithCache, opts.cacheId);
+    return opts.store.get(opts.cacheId).then(respondWithCache);
   };
 
   // Organizations
@@ -346,7 +362,7 @@
   , "ADULTS" // the lone plural organization
   ];
 
-  ldsOrgP.init = function (cb, eventer) {
+  ldsOrgP.init = function (eventer) {
     var me = this
       , cacheOpts = {}
       ;
@@ -369,13 +385,17 @@
 
 
     me._store = me._Cache.create(cacheOpts, cacheOpts);
-    me._store.init(function () {
+    return me._store.init().then(function () {
+      var p
+        ;
+
       me._emit('cacheReady');
-      me.getCurrentUserMeta(cb);
+      p = me.getCurrentUserMeta();
+      return p;
     });
   };
 
-  ldsOrgP.signin = function (cb, auth) {
+  ldsOrgP.signin = function (auth) {
     var me = this
       , guestRe
       ;
@@ -384,57 +404,62 @@
 
     guestRe = /^(gandalf|dumbledore|test|guest|demo|aoeu|asdf|root|admin|secret|pass|password|12345678|anonymous)$/i;
     if (!me._auth || !me._auth.username) {
-      cb(new Error("You didn't specify a username."));
-      return;
+      return PromiseA.reject(new Error("You didn't specify a username."));
     }
     if (this._hogwarts || (guestRe.test(me._auth.username) && guestRe.test(me._auth.password))) {
       if (exports.window) {
-        exports.window.alert("You are using a demo account. Welcome to Hogwarts!");
+        if (!this._hogwarts) {
+          exports.window.alert("You are using a demo account. Welcome to Hogwarts!");
+        }
       }
       if (!this._hogwarts) {
         console.info('Welcome to Hogwarts! ;-)');
       }
       this._hogwarts = true;
-      cb(null);
-      return;
+      return PromiseA.resolve(null);
     }
 
-    me._signin(function (err, data) {
-      if (!err) {
-        me._authenticated = Date.now();
-      }
+    return new PromiseA(function (resolve, reject) {
+      me._signin(function (err, data) {
+        if (!err) {
+          me._authenticated = Date.now();
+        }
 
-      cb(err, data);
-    }, me._auth);
+        if (err) {
+          return reject(err);
+        } else {
+          return resolve(data);
+        }
+      }, me._auth);
+    });
   };
-  ldsOrgP.signout = function (cb) {
+  ldsOrgP.signout = function () {
     var me = this
       ;
 
     this._hogwarts = false;
-    ldsOrgP._signout(function (err) {
-      if (!err) {
-        me._authenticated = 0;
-      }
-      cb(err);
+    return ldsOrgP._signout().then(function () {
+      me._authenticated = 0;
     });
   };
-  ldsOrgP.makeRequest = function (cb, url) {
+  ldsOrgP.makeRequest = function (url) {
     var me = this
       , count = 0
       ;
 
     function doItNow() {
-      me._makeRequest(function (err, data) {
-        if (err && count < 2) {
-          console.error('Request Failed:', url);
-          console.error(err);
-          count += 1;
-          me.signin(doItNow);
-          return;
-        }
-        cb(err, data);
-      }, url);
+      return me._makeRequest(url)
+        .catch(function (err) {
+          if (err && count < 2) {
+            console.error('Request Failed:', url);
+            console.error(err);
+            count += 1;
+            return me.signin().catch(doItNow);
+          }
+          
+          throw err;
+        })
+        ;
     }
 
     if (this._hogwarts) {
@@ -449,9 +474,9 @@
     // It would take about 1.5 hrs to download a complete area
     // at 25s per ward with 11 wards per stake and 18 stakes
     if (!me._authenticated || (Date.now() - me._authenticated > 30 * 60 * 1000)) {
-      me.signin(doItNow, me._auth);
+      return me.signin(me._auth).then(doItNow);
     } else {
-      doItNow();
+      return doItNow();
     }
   };
   ldsOrgP.getImageData = function (next, imgSrc) {
@@ -480,7 +505,7 @@
     var me = this
       ;
 
-    me.getCurrentUserInfo(function (userInfo) {
+    return me.getCurrentUserInfo(function (userInfo) {
       fn(userInfo.individualId);
     });
   };
@@ -488,54 +513,57 @@
     var me = this
       ;
 
-    LdsOrg._getJSON(
-     function (err, data) {
-        me._currentUserId = data.individualId;
-        me._emit('currentUserId', data.individualInfo);
-        me._currentUserInfo = data;
-        me._emit('currentUserInfo', data);
-        fn(data);
-      }
-    , { url: LdsOrg.getCurrentUserInfoUrl()
+    return LdsOrg._getJSON(
+      { url: LdsOrg.getCurrentUserInfoUrl()
       , store: me._store
       , cacheId: 'current-user-info'
       , ldsOrg: me
       }
-    );
+    ).then(function (data) {
+      me._currentUserId = data.individualId;
+      me._emit('currentUserId', data.individualInfo);
+      me._currentUserInfo = data;
+      me._emit('currentUserInfo', data);
+      fn(data);
+
+      return data;
+    });
   };
   ldsOrgP.getCurrentUnits = function (fn) {
     var me = this
       ;
 
-    LdsOrg._getJSON(
-      function (err, units) {
-        me._currentUnits = units;
-        me._emit('currentUnits', units);
-        fn(units);
-      }
-    , { url: LdsOrg.getCurrentMetaUrl()
+    return LdsOrg._getJSON(
+      { url: LdsOrg.getCurrentMetaUrl()
       , store: me._store
       , cacheId: 'current-units'
       , ldsOrg: me
       }
-    );
+    ).then(function (units) {
+      me._currentUnits = units;
+      me._emit('currentUnits', units);
+      fn(units);
+
+      return units;
+    });
   };
   ldsOrgP.getCurrentStakes = function (fn) {
     var me = this
       ;
 
-    LdsOrg._getJSON(
-      function (err, stakeList) {
-        me._currentStakes = stakeList;
-        me._emit('currentStakes', stakeList);
-        fn(stakeList);
-      }
-    , { url: LdsOrg.getCurrentStakeUrl()
+    return LdsOrg._getJSON(
+      { url: LdsOrg.getCurrentStakeUrl()
       , store: me._store
       , cacheId: 'current-stakes'
       , ldsOrg: me
       }
-    );
+    ).then(function (stakeList) {
+      me._currentStakes = stakeList;
+      me._emit('currentStakes', stakeList);
+      fn(stakeList);
+
+      return stakeList;
+    });
   };
 
 
@@ -543,153 +571,167 @@
   //
   // Session Composite
   //
-  ldsOrgP.getCurrentUserMeta = function (fn) {
+  ldsOrgP.getCurrentUserMeta = function () {
+    console.log('getCurrentUserMeta');
     var me = this
-      //, areaInfoId = 'area-info'
-      //, stakesInfoId = 'stakes-info'
-      , join = Join.create()
-      , userJ = join.add()
-      , metaJ = join.add()
-      , stakeJ = join.add()
       ;
 
-    me.getCurrentUserInfo(function (userInfo) {
-      me.currentUserId = userInfo.individualId;
-      me.currentUserInfo = userInfo;
-
-      userJ(null, userInfo.individualId, userInfo);
-    });
-    me.getCurrentUnits(function (units) {
-      me._areaMeta = units;
-      me.homeAreaId = units.areaUnitNo;
-      me.homeStakeId = units.stakeUnitNo;
-      me.homeWardId = units.wardUnitNo;
-      me.homeArea.areaUnitNo = units.areaUnitNo;
-
-      metaJ(null, units);
-    });
-    me.getCurrentStakes(function (stakes) {
-      me.homeArea.stakes = stakes;
-      me.homeArea.stakes.forEach(function (stake) {
-        me.homeAreaStakes[stake.stakeUnitNo] = stake;
-        me.stakes[stake.stakeUnitNo] = stake;
-      });
-      // TODO me._emit('area', me.homeArea);
-
-      Object.keys(me.stakes).forEach(function (stakeNo) {
-        var stake = me.stakes[stakeNo]
-          ;
-
-        stake.wards.forEach(function (ward) {
-          me.wards[ward.wardUnitNo] = ward;
-        });
-      });
-
-      stakeJ(null, stakes);
-    });
-
-    join.then(function (userArgs, unitArgs, stakeArgs) {
-      var meta
+    return new PromiseA(function (resolve) {
+        //, areaInfoId = 'area-info'
+        //, stakesInfoId = 'stakes-info'
+      var join = Join.create()
+        , userJ = join.add()
+        , metaJ = join.add()
+        , stakeJ = join.add()
         ;
 
-      meta = {
-        currentUserId: userArgs[1]
-      , currentUserInfo: userArgs[2]
-      , currentUnits: unitArgs[1]
-      , currentStakes: stakeArgs[1]
-        // oh which key to use... dummy, fake, mock, anonymous, guest, test, demo?
-        // or... real, authentic, verified, validated
-        // accountType, role (no), entityType
-        // hmmmm... guest sounds very polite
-        // but requiring true to be present is a better practice than requiring false to be absent
-        // but real sounds stupid and one day there may also be a 'verified'... and guest sounds nice
-        // but best practices... well, 'guest' is intuitively obvious, 'real' is not
-      , guest: true === me._hogwarts
-      };
+      me.getCurrentUserInfo(function (userInfo) {
+        me.currentUserId = userInfo.individualId;
+        me.currentUserInfo = userInfo;
 
-      me.homeStake = me.stakes[me.homeStakeId];
-      me.homeStake.wards.forEach(function (ward) {
-        me.homeStakeWards[ward.wardUnitNo] = ward;
+        console.log('[a.1] getCurrentUserMeta');
+        userJ(null, userInfo.individualId, userInfo);
+      });
+      me.getCurrentUnits(function (units) {
+        me._areaMeta = units;
+        me.homeAreaId = units.areaUnitNo;
+        me.homeStakeId = units.stakeUnitNo;
+        me.homeWardId = units.wardUnitNo;
+        me.homeArea.areaUnitNo = units.areaUnitNo;
+
+        console.log('[a.2] getCurrentUserMeta');
+        metaJ(null, units);
+      });
+      me.getCurrentStakes(function (stakes) {
+        me.homeArea.stakes = stakes;
+        me.homeArea.stakes.forEach(function (stake) {
+          me.homeAreaStakes[stake.stakeUnitNo] = stake;
+          me.stakes[stake.stakeUnitNo] = stake;
+        });
+        // TODO me._emit('area', me.homeArea);
+
+        Object.keys(me.stakes).forEach(function (stakeNo) {
+          var stake = me.stakes[stakeNo]
+            ;
+
+          stake.wards.forEach(function (ward) {
+            me.wards[ward.wardUnitNo] = ward;
+          });
+        });
+
+        console.log('[a.3] getCurrentUserMeta');
+        stakeJ(null, stakes);
       });
 
-      me.homeWard = me.wards[me.homeWardId];
+      console.log('[b.1] getCurrentUserMeta');
+      join.then(function (userArgs, unitArgs, stakeArgs) {
+        console.log('[b.2] getCurrentUserMeta');
+        var meta
+          ;
 
-      me.getCurrentHousehold(function (household) {
-        meta.currentHousehold = household;
+        meta = {
+          currentUserId: userArgs[1]
+        , currentUserInfo: userArgs[2]
+        , currentUnits: unitArgs[1]
+        , currentStakes: stakeArgs[1]
+          // oh which key to use... dummy, fake, mock, anonymous, guest, test, demo?
+          // or... real, authentic, verified, validated
+          // accountType, role (no), entityType
+          // hmmmm... guest sounds very polite
+          // but requiring true to be present is a better practice than requiring false to be absent
+          // but real sounds stupid and one day there may also be a 'verified'... and guest sounds nice
+          // but best practices... well, 'guest' is intuitively obvious, 'real' is not
+        , guest: true === me._hogwarts
+        };
 
-        // Just a lookin' for ways to speed things up...
-        // here's the tough part: you can't get email addresses without getting the household,
-        // and since the pictures expire quickly and they can also only be gotton from household data
-        // it seems that there's no quick way to get all ward data so we might as well get pics
-        // or also skip emails...
-        if (me._prefetch) {
-          // for a stake of 12 wards it took 1m 5s
-          // an area of 18 stakes would get done in about 20 min
-          me.prefetchArea(function () {
-            // add in the email addresses and pictures and you're up another hour or so
-            me.prefetchArea(function () {
-              // nada
-            }, { fullHouseholds: true });
-          }, { fullHouseholds: false });
-        }
+        me.homeStake = me.stakes[me.homeStakeId];
+        me.homeStake.wards.forEach(function (ward) {
+          me.homeStakeWards[ward.wardUnitNo] = ward;
+        });
 
-        me._emit('meta', meta);
-        fn(meta);
+        me.homeWard = me.wards[me.homeWardId];
+
+        me.getCurrentHousehold(function (household) {
+          meta.currentHousehold = household;
+
+          // Just a lookin' for ways to speed things up...
+          // here's the tough part: you can't get email addresses without getting the household,
+          // and since the pictures expire quickly and they can also only be gotton from household data
+          // it seems that there's no quick way to get all ward data so we might as well get pics
+          // or also skip emails...
+          if (me._prefetch) {
+            // for a stake of 12 wards it took 1m 5s
+            // an area of 18 stakes would get done in about 20 min
+            me.prefetchArea({ fullHouseholds: false }).then(function () {
+              // add in the email addresses and pictures and you're up another hour or so
+              me.prefetchArea({ fullHouseholds: true }).then(function () {
+                // nada
+              });
+            });
+          }
+
+          me._emit('meta', meta);
+          resolve(meta);
+        });
       });
     });
   };
-  ldsOrgP.prefetchStake = function (cb, stakeUnitNo, opts) {
+  ldsOrgP.prefetchStake = function (stakeUnitNo, opts) {
     var me = this
       , bigData = { wards: [] }
       ;
 
-    me.getStake(stakeUnitNo).getAll(function (stakeData) {
+    return me.getStake(stakeUnitNo).getAll(opts).then(function (stakeData) {
       bigData.stake = stakeData;
-      me.getStake(stakeUnitNo).getCurrentWard().getAll(function (currentWardData) {
+      return me.getStake(stakeUnitNo).getCurrentWard().getAll(opts).then(function (currentWardData) {
         var stake
           ;
 
         bigData.wards.push(currentWardData);
         stake = me.stakes[me.homeStakeId];
-        forEachAsync(stake.wards, function (next, ward) {
-          if (me.homeWardId === ward.wardUnitNo) {
-            next();
-            return;
-          }
-          me.getCurrentStake().getWard(ward.wardUnitNo).getAll(function (wardData) {
-            bigData.wards.push(wardData);
-            next();
-          }, opts);
-        }).then(function () {
-          // FYI it would be stupid to try to transmit this to a browser in a single request
-          cb(bigData);
+        return new PromiseA(function (resolve) {
+          forEachAsync(stake.wards, function (next, ward) {
+            if (me.homeWardId === ward.wardUnitNo) {
+              next();
+              return;
+            }
+            me.getCurrentStake().getWard(ward.wardUnitNo).getAll(opts).then(function (wardData) {
+              bigData.wards.push(wardData);
+              next();
+            });
+          }).then(function () {
+            // FYI it would be stupid to try to transmit this to a browser in a single request
+            return resolve(bigData);
+          });
         });
-      }, opts);
-    }, opts);
+      });
+    });
   };
-  ldsOrgP.prefetchArea = function (cb, opts) {
+  ldsOrgP.prefetchArea = function (opts) {
     var me = this
       , areaData = { stakes: [] }
       ;
 
-    me.prefetchStake(function (stake) {
+    return me.prefetchStake(me.homeStakeId, opts).then(function (stake) {
       areaData.stakes.push(stake);
 
-      forEachAsync(me.homeArea.stakes, function (next, stake) {
-        if (me.homeStakeId === stake.stakeUnitNo) {
-          next();
-          return;
-        }
+      return new PromiseA(function (resolve) {
+        forEachAsync(me.homeArea.stakes, function (next, stake) {
+          if (me.homeStakeId === stake.stakeUnitNo) {
+            next();
+            return;
+          }
 
-        me.prefetchStake(function (stakeData) {
-          areaData.stakes.push(stakeData);
-          next();
-        }, stake.stakeUnitNo, opts);
-      }).then(function () {
-        // FYI it would be beyond stupid to try to transmit this to a browser as a single request
-        cb(areaData);
+          return me.prefetchStake(stake.stakeUnitNo, opts).then(function (stakeData) {
+            areaData.stakes.push(stakeData);
+            next();
+          });
+        }).then(function () {
+          // FYI it would be beyond stupid to try to transmit this to a browser as a single request
+          return resolve(areaData);
+        });
       });
-    }, me.homeStakeId, opts);
+    });
   };
   ldsOrgP.getCurrentHousehold = function (fn, opts) {
     opts = opts || {};
