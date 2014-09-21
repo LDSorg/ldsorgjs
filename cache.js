@@ -2,14 +2,14 @@
 ;(function (exports) {
   'use strict';
 
-  var fs = require('fs')
-    , path = require('path')
-    , cachep
+  var path = require('path')
+    , PromiseA = require('bluebird').Promise
+    , _p
+    , fs = PromiseA.promisifyAll(require('fs'))
     ;
 
   function LdsOrgCache(opts, opts2) {
     var me = this
-      , store = {}
       ;
 
     if (!(me instanceof LdsOrgCache)) {
@@ -19,20 +19,16 @@
     me._opts = opts;
     me._opts.cacheDir = opts2.cacheDir || __dirname;
 
+    // TODO remind myself why I'm doing this
     if (me._opts.ldsOrg && !me._opts.ldsStake && !me._opts.ldsWard) {
-      return {
-        get: function (cb, id) { setTimeout(function () { cb(null, store[id]); }); }
-      , put: function (cb, data) { store[data._id] = data; if (cb) { cb(null); } }
-      , destroy: function (cb, id) { delete store[id]; if (cb) { cb(null); } }
-      , init: function (cb) { cb(); }
-      , clear: function (cb) { store = {}; cb(); }
-      };
+      me._nosave = true;
     }
   }
-  LdsOrgCache.create = LdsOrgCache;
-  cachep = LdsOrgCache.prototype;
 
-  cachep.init = function (ready) {
+  LdsOrgCache.create = LdsOrgCache;
+  _p = LdsOrgCache.prototype;
+
+  _p.init = function () {
     var me = this
       ;
 
@@ -50,10 +46,9 @@
         me._data = require(me._filepath);
       } catch(e) {
         me._data = {};
-        me._save();
       }
 
-      ready();
+      return PromiseA.resolve();
     }
 
     function getWardCache(ward) {
@@ -70,79 +65,83 @@
         me._data = require(me._filepath);
       } catch(e) {
         me._data = {};
-        me._save();
       }
 
-      ready();
+      return PromiseA.resolve();
     }
 
     if (me._opts.ldsWard) {
-      getWardCache(me._opts.ldsWard);
-      return;
-    }
-
-    if (me._opts.ldsStake) {
-      getStakeCache(me._opts.ldsStake);
-      return;
+      return getWardCache(me._opts.ldsWard);
+    } else if (me._opts.ldsStake) {
+      return getStakeCache(me._opts.ldsStake);
+    } else {
+      me._data = {};
+      return PromiseA.resolve();
     }
   };
 
-  cachep._save = function () {
+  _p._save = function (opts) {
     var me = this
       ;
 
-    fs.writeFileSync(me._filepath, JSON.stringify(me._data, null, '  '), 'utf8');
+    if (me._nosave) {
+      return PromiseA.resolve();
+    }
+    opts = opts || {};
+
+    function save() {
+      clearTimeout(me._writet);
+      me._writes = 0;
+      me._writep = fs.writeFileAsync(me._filepath, JSON.stringify(me._data, null, '  '), 'utf8');
+      return me._writep;
+    }
+
+    if (me._writes && me._writes > 100) {
+      return save();
+    }
+
+    if (opts.immediate) {
+      return save();
+    }
+
+    return new PromiseA(function (resolve) {
+      me._writet = setTimeout(function () {
+        resolve(save());
+      }, 30 * 1000);
+    });
   };
 
-  cachep.get = function (fn, cacheId) {
+  _p.get = function (cacheId) {
     var me = this
       ;
 
-    setTimeout(function () {
-      fn(null, me._data[cacheId]);
-    }, 0);
+    return PromiseA.resolve(me._data[cacheId]);
   };
 
-  cachep.put = function (fn, cacheId, obj) {
+  _p.put = function (cacheId, obj) {
     var me = this
       ;
 
     me._data[cacheId] = obj;
-
-    clearTimeout(me._token);
-    me._token = setTimeout(function () {
-      me._save();
-    }, 1000);
-
-    fn(null);
+    me._save();
+    return PromiseA.resolve();
   };
 
-  cachep.destroy = function (fn, cacheId) {
+  _p.destroy = function (cacheId) {
     var me = this
       ;
 
     delete me._data[cacheId];
-
-    clearTimeout(me._token);
-    me._token = setTimeout(function () {
-      me._save();
-    }, 1000);
-
-    fn(null);
+    me._save();
+    return PromiseA.resolve();
   };
 
-  cachep.clear = function (fn) {
+  _p.clear = function () {
     var me = this
       ;
 
     me._data = {};
-
-    clearTimeout(me._token);
-    me._token = setTimeout(function () {
-      me._save();
-    }, 1000);
-
-    fn(null);
+    return me._save({ immediate: true });
   };
 
   module.exports = exports = exports.LdsOrgCache = LdsOrgCache.LdsOrgCache = LdsOrgCache;
