@@ -250,7 +250,7 @@
       if (data) {
         stale = (Date.now() - data.updatedAt) < (opts.keepAlive || defaultKeepAlive);
 
-        if (!(opts.noCache || opts.expire)) {
+        if (!opts.noCache) {
           return PromiseA.resolve(data.value);
         }
 
@@ -311,7 +311,7 @@
       // respond with the old data, but queue up new data in the background
       if (data) {
         stale = (Date.now() - data.updatedAt) < (opts.keepAlive || defaultKeepAlive);
-        if (!(opts.noCache || opts.expire)) {
+        if (!opts.noCache) {
           cb(null, data.value);
           cb = function () {};
           return PromiseA.resolve(data.value);
