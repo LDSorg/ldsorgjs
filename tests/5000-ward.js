@@ -39,11 +39,15 @@
       console.error(err);
       throw err;
     })
-    .then(function (stake) {
-      console.log(Object.keys(stake));
-      console.log(Object.keys(stake.ward));
-      console.log(Object.keys(stake.organizations));
-      console.log(Object.keys(stake.callings));
+    .then(function (ward) {
+      console.log(Object.keys(ward));
+      return ldsorg.getCurrentStake().getCurrentWard().getAll({ fullHouseholds: true });
+    })
+    .then(function (ward) {
+      console.log(Object.keys(ward));
+      console.log(Object.keys(ward.ward));
+      console.log(Object.keys(ward.organizations));
+      console.log(Object.keys(ward.callings));
       console.log('SUCCESS');
       process.exit();
     })

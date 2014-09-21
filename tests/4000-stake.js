@@ -43,7 +43,9 @@
       console.log(Object.keys(stake));
       console.log(Object.keys(stake.stake));
       console.log(Object.keys(stake.callings));
-      //return ldsorg.getCurrentStake().getCurrentWard().getAll({ fullHouseholds: false });
+      return ldsorg.getCurrentStake().getAll({ fullHouseholds: true });
+    }).then(function (stake) {
+      console.log(Object.keys(stake));
       console.log('SUCCESS');
       process.exit();
     })
