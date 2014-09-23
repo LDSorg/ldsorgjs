@@ -2,19 +2,20 @@
 ;(function (exports) {
   'use strict';
 
-  var LdsOrgNode = { init: function (LdsDir, ldsDirP) {
+  var https = require('https')
+    , LdsOrgNode = { init: function (LdsDir, ldsDirP, opts) {
 
     var PromiseA = require('bluebird').Promise
       , request = PromiseA.promisifyAll(require('request'))
+      , requestAsync = PromiseA.promisify(require('request'))
       ;
 
-    ldsDirP._signin = function (cb, auth) {
+    ldsDirP._rawLogin = function (auth) {
       var me = this
         ;
-
       me.__jar = request.jar();
       me.__pool = { maxSockets: 1000 };
-      request.post(
+      return request.postAsync(
         'https://signin.lds.org/login.html', {
         jar: me.__jar
       , pool: me.__pool
@@ -22,25 +23,74 @@
           username: auth.username
         , password: auth.password
         }
-      }, function (err, res, body) {
-        if (err) {
-          cb(err);
-          return;
-        }
-
+      }).spread(function (res, body) {
         if (/SSO/.test(body)) {
-          cb(new Error('Failed to authenticate. Check username / password'));
-          return;
-        }
-        if (/Access Denied/.test(body)) {
-          cb(new Error("You are signed in with a 'friend' account, not as a member of the church. "
-            + "Use the username 'dumbledore' and password 'secret' "
-            + "if you are a non-member developer working on a project and need access."));
-          return;
+          throw new Error('Failed to authenticate. Check username / password');
         }
 
-        cb(null);
+        if (/Access Denied/.test(body)) {
+          throw new Error("You are signed in with a 'friend' account, not as a member of the church. "
+            + "Use the username 'dumbledore' and password 'secret' "
+            + "if you are a non-member developer working on a project and need access.");
+        }
+
+        return { username: auth.username, password: auth.password };
       });
+    };
+
+    ldsDirP._trustedLogin = function (auth) {
+      var me = this
+        , JarSON = require('jarson')
+        , url = opts.proxy.url + '/api/login'
+        ;
+
+      if (auth.token) {
+        url = opts.proxy.url + '/api/passthru';
+      }
+
+      return requestAsync({
+        url: url
+      , method: 'POST'
+        // this will use EITHER user/pass OR token
+      , json: { username: auth.username, password: auth.password, token: auth.token }
+      , agent: new https.Agent({
+          host: opts.proxy.hostname
+        , port: opts.proxy.port
+        , path: '/'
+        , ca: opts.proxy.ca
+        , key: opts.proxy.key
+        , cert: opts.proxy.cert
+        })
+      }).spread(function (resp, body) {
+        console.log('Proxy Login');
+        console.log(body);
+
+        if (body.error) {
+          throw body.error;
+        }
+
+        me.__jar = JarSON.fromJSON(body.jar);
+        me.__token = body.token;
+
+        return { token: body.token, jar: me.__jar };
+      });
+    };
+
+    ldsDirP._signin = function (auth) {
+      var me = this
+        ;
+
+      me.__agent = new https.Agent({
+        maxSockets: 100
+      });
+
+      if (!opts.proxy) {
+        return me._rawLogin(auth);
+      }
+
+      // Exchange password for encrypted token
+      // rather than keeping the password around in memory
+      return me._trustedLogin(auth);
     };
     ldsDirP._signout = function () {
       var me = this

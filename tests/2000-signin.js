@@ -8,12 +8,16 @@
     , username
     , password
     , isNode
+    , fs
     ;
 
   if ('undefined' !== typeof process && process.argv) {
+    fs = require('fs');
+
     username = process.argv[2] || require('./config').username;
     password = process.argv[3] || require('./config').password;
-    isNode = true;
+    // proxy is optional, no worries if left blank
+    isNode = { proxy: require('./config').proxy };
   }
 
   ldsorg = LdsOrg.create({

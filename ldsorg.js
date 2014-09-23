@@ -17,7 +17,7 @@
     opts = opts || {};
 
     if (opts.node) {
-      require('./node').LdsOrgNode.init(LdsOrg, ldsOrgP);
+      require('./node').LdsOrgNode.init(LdsOrg, ldsOrgP, opts.node);
     } else if (opts.phantom) {
       require('./phantom').init(LdsOrg, ldsOrgP);
     } else {
@@ -419,18 +419,12 @@
       return PromiseA.resolve(null);
     }
 
-    return new PromiseA(function (resolve, reject) {
-      me._signin(function (err, data) {
-        if (!err) {
-          me._authenticated = Date.now();
-        }
-
-        if (err) {
-          return reject(err);
-        } else {
-          return resolve(data);
-        }
-      }, me._auth);
+    return me._signin(me._auth).then(function (data) {
+      me._authenticated = Date.now();
+      if (data && data.token) {
+        me._auth = { token: data.token };
+      }
+      return data;
     });
   };
   ldsOrgP.signout = function () {
@@ -494,7 +488,7 @@
 
     if (!me._authenticated) {
       // Note that the photo path would have probably expired by this time... but whatevs
-      me._signin(doItNow);
+      me._signin().then(doItNow);
     } else {
       doItNow();
     }

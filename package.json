@@ -15,6 +15,7 @@
     "forEachAsync": "~3.0.0",
     "forallasync": "~1.0.1",
     "foreachasync": "~3.0.0",
+    "jarson": "^1.0.0",
     "join": "~3.0.0",
     "lateral": "~3.0.5"
   },
