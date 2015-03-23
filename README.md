@@ -1,3 +1,10 @@
+READ THIS FIRST
+===============
+
+This library is **deprecated**.
+
+See https://lds.io for the latest OAuth2 API
+
 ldsorg.js
 ===
 
