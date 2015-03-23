@@ -3,7 +3,7 @@ READ THIS FIRST
 
 This library is **deprecated**.
 
-See https://lds.io for the latest OAuth2 API
+See https://ldsconnect.org and https://lds.io for the latest OAuth2 API, examples, and documentation.
 
 ldsorg.js
 ===
