@@ -426,6 +426,11 @@
 
     function doItNow() {
       me._makeRequest(function (err, data) {
+        if (err && url.match(/current-user-info/)) {
+            console.log('ignoring current-user-info issue...');
+            err = undefined;
+            data = {};
+        }
         if (err && count < 2) {
           console.error('Request Failed:', url);
           console.error(err);
@@ -490,8 +495,8 @@
 
     LdsOrg._getJSON(
      function (err, data) {
-        me._currentUserId = data.individualId;
-        me._emit('currentUserId', data.individualInfo);
+        me._currentUserId = data && data.individualId;
+        me._emit('currentUserId', data && data.individualInfo);
         me._currentUserInfo = data;
         me._emit('currentUserInfo', data);
         fn(data);
@@ -554,10 +559,10 @@
       ;
 
     me.getCurrentUserInfo(function (userInfo) {
-      me.currentUserId = userInfo.individualId;
+      me.currentUserId = userInfo && userInfo.individualId;
       me.currentUserInfo = userInfo;
 
-      userJ(null, userInfo.individualId, userInfo);
+      userJ(null, userInfo && userInfo.individualId, userInfo);
     });
     me.getCurrentUnits(function (units) {
       me._areaMeta = units;

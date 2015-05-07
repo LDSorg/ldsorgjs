@@ -141,6 +141,9 @@
         , id
         ;
 
+      if (profileOrId === undefined)
+        return fn();
+
       id = profileOrId.householdId || profileOrId.id || profileOrId;
 
       me.getHousehold(function (profile) {
