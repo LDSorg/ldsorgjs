@@ -67,12 +67,17 @@
         try {
           data = JSON.parse(body);
         } catch(e) {
+            if (url.match(/current-user-info/)) {
+              data = {};
+              console.log('ignoring current-user-info');
+            } else {
           console.log(url);
           console.error(e);
           console.log('typeof body:', typeof body);
           console.log('JSON.stringify(body)');
           console.log(JSON.stringify(String(body).substr(0, 100)));
           err = e;
+            }
         }
 
         cb(err, data);
